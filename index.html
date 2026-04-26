@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>愛之語雙人互動遊戲</title>
+    <style>
+        :root {
+            --primary: #ff6b81;
+            --primary-hover: #ff4757;
+            --fav-color: #2ed573;
+            --fav-bg: #e8f8f0;
+            --thunder-color: #ff4757;
+            --thunder-bg: #ffeef0;
+            --bg-color: #f1f2f6;
+            --text-dark: #2f3542;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-dark);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .app-container {
+            background-color: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+            width: 100%;
+            max-width: 600px;
+            min-height: 600px;
+            padding: 30px;
+            box-sizing: border-box;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .step-section {
+            display: none;
+            animation: fadeIn 0.4s ease-in-out;
+        }
+
+        .step-section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h2 {
+            color: var(--primary);
+            text-align: center;
+            margin-top: 0;
+            margin-bottom: 24px;
+            border-bottom: 2px dashed #f1f2f6;
+            padding-bottom: 15px;
+        }
+
+        .scenario-box {
+            background-color: #fff0f2;
+            padding: 20px;
+            border-radius: 12px;
+            font-size: 1.1em;
+            line-height: 1.6;
+            text-align: center;
+            margin-bottom: 30px;
+            border-left: 5px solid var(--primary);
+        }
+
+        .instruction {
+            text-align: center;
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 20px;
+            transition: color 0.3s;
+        }
+
+        .instruction.thunder-mode {
+            color: var(--thunder-color);
+        }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background-color: white;
+            border: 2px solid #dfe4ea;
+            border-radius: 12px;
+            padding: 20px 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            user-select: none;
+        }
+
+        .card:hover:not(.disabled) {
+            border-color: #a4b0be;
+            transform: translateY(-3px);
+            box-shadow: 0 5px 10px rgba(0,0,0,0.05);
+        }
+
+        .card .icon {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .card .label {
+            font-weight: bold;
+            font-size: 1.05em;
+        }
+
+        /* 選擇狀態樣式 */
+        .card.fav-selected {
+            border-color: var(--fav-color);
+            background-color: var(--fav-bg);
+            cursor: default;
+        }
+        
+        .card.thunder-selected {
+            border-color: var(--thunder-color);
+            background-color: var(--thunder-bg);
+            cursor: default;
+        }
+
+        .card.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            filter: grayscale(100%);
+        }
+
+        /* 天使卡樣式 (修改為橫向排列與滿版放大) */
+        .angel-cards {
+            display: flex;
+            flex-direction: row; /* 橫向排列 */
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .angel-card {
+            background-color: transparent; 
+            border: 4px solid transparent; /* 預設透明邊框 */
+            padding: 0; /* 拿掉內距，讓圖片撐滿 */
+            border-radius: 12px;
+            cursor: pointer;
+            overflow: hidden; /* 確保圖片的邊角會跟著圓角裁切 */
+            transition: all 0.3s ease;
+            line-height: 0; /* 消除圖片底部的多餘空白 */
+            flex: 1; /* 新增這行：讓三張卡平均平分空間 */
+        }
+
+        .angel-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .angel-card.selected {
+            border-color: var(--primary); /* 選中時顯示粉紅色粗框 */
+            transform: scale(1.02);
+            box-shadow: 0 8px 15px rgba(255, 107, 129, 0.4);
+        }
+
+        .angel-card.dimmed {
+            opacity: 0.4;
+            filter: grayscale(100%);
+        }
+
+        /* 2. 新增滿版放大遮罩層（Modal）的樣式 */
+        .image-modal {
+            display: none; /* 預設隱藏 */
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(0, 0, 0, 0.85); /* 半透明黑底 */
+            z-index: 9999; /* 確保浮在最上層 */
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            animation: fadeIn 0.3s ease;
+        }
+
+        /* 滿版圖片的限制大小，避免破圖 */
+        .image-modal img {
+            max-width: 95%;
+            max-height: 85vh;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+
+        .image-modal .close-text {
+            color: white;
+            margin-top: 15px;
+            font-size: 1.2em;
+            cursor: pointer;
+            letter-spacing: 2px;
+        }
+
+        button.btn-main {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.1em;
+            font-weight: bold;
+            border-radius: 30px;
+            cursor: pointer;
+            width: 100%;
+            transition: background-color 0.3s;
+            display: none;
+            margin-top: 20px;
+        }
+
+        button.btn-main:hover {
+            background-color: var(--primary-hover);
+        }
+
+        button.btn-main.show {
+            display: block;
+        }
+
+        /* 結果頁面樣式 */
+        .result-comparison {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .result-box {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 12px;
+        }
+        
+        .result-box h3 {
+            margin-top: 0;
+            font-size: 1.1em;
+            color: #576574;
+            border-bottom: 1px solid #dfe4ea;
+            padding-bottom: 10px;
+        }
+
+        .result-items {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .result-item {
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9em;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .result-item.fav { background-color: var(--fav-bg); color: #218c53; border: 1px solid var(--fav-color); }
+        .result-item.thunder { background-color: var(--thunder-bg); color: #c0392b; border: 1px solid var(--thunder-color); }
+
+        .score-display {
+            text-align: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            color: var(--primary);
+            margin: 20px 0;
+            padding: 20px;
+            background-color: #fff0f2;
+            border-radius: 12px;
+        }
+
+        .hearts { color: #e74c3c; letter-spacing: 5px; }
+
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    
+    <div id="step-1" class="step-section active">
+        <h2>Step 1：情境共讀</h2>
+        <div class="scenario-box" style="padding: 15px;"> <p style="margin-top: 0;"><strong>請主角 A 與玩家 B 一起閱讀：</strong></p>
+            <img src="scenario.jpg" alt="情境題目" style="width: 100%; height: auto; border-radius: 8px;">
+        </div>
+        <button class="btn-main show" onclick="goToStep(2)">主角 A 開始選擇</button>
+    </div>
+
+    <div id="step-2" class="step-section">
+        <h2>Step 2 & 3：主角 A 的選擇</h2>
+        <div id="instruction-a" class="instruction">請選擇 2 種你最「喜歡」的愛之語 (0/2)</div>
+        <div class="cards-grid" id="cards-container-a">
+            </div>
+        <button id="btn-confirm-a" class="btn-main" onclick="goToStep(3)">確認選擇，請玩家 B 閉眼</button>
+    </div>
+
+    <div id="step-3" class="step-section">
+        <h2>Step 4：天使卡提示</h2>
+        <div class="scenario-box" style="background-color: #fffbe6; border-color: #f6d365;">
+            <strong>玩家 B 請接手裝置！</strong><br>
+            請閱讀下方 3 張天使卡的問題，並選擇一張你最想知道答案的，請主角 A 回答以獲取線索！
+        </div>
+        
+        <div class="angel-cards" id="angel-cards-container">
+            <div class="angel-card" onclick="selectAngelCard(0)">
+                <img src="angel1.jpg" alt="天使卡 1" style="width: 100%; height: auto;">
+            </div>
+            <div class="angel-card" onclick="selectAngelCard(1)">
+                <img src="angel2.jpg" alt="天使卡 2" style="width: 100%; height: auto;">
+            </div>
+            <div class="angel-card" onclick="selectAngelCard(2)">
+                <img src="angel3.jpg" alt="天使卡 3" style="width: 100%; height: auto;">
+            </div>
+        </div>
+        
+        <button id="btn-confirm-angel" class="btn-main" onclick="goToStep(4)">聽完 A 的分享了，開始猜測</button>
+    </div>
+
+    <div id="step-4" class="step-section">
+        <h2>Step 5：玩家 B 猜測</h2>
+        <div id="instruction-b" class="instruction">請猜測主角 A 最「喜歡」的 2 種愛之語 (0/2)</div>
+        <div class="cards-grid" id="cards-container-b">
+            </div>
+        <button id="btn-confirm-b" class="btn-main" onclick="goToStep(5)">確認猜測，揭曉結果！</button>
+    </div>
+
+    <div id="step-5" class="step-section">
+        <h2>Step 6：結果揭曉</h2>
+        
+        <div class="score-display">
+            獲得愛心：<span id="hearts-display" class="hearts"></span><br>
+            <span style="font-size: 0.6em; color: #7f8c8d; font-weight: normal;">(猜中喜歡+1顆，猜中雷點+2顆)</span>
+        </div>
+
+        <div class="result-comparison">
+            <div class="result-box">
+                <h3>👑 主角 A 的真實心聲</h3>
+                <div id="result-a" class="result-items"></div>
+            </div>
+            <div class="result-box">
+                <h3>🕵️ 玩家 B 的猜測</h3>
+                <div id="result-b" class="result-items"></div>
+            </div>
+        </div>
+        
+        <div class="scenario-box" style="margin-top:20px;">
+            <strong>Step 7 互動時間：</strong><br>
+            請主角 A 說明為什麼會這樣選擇？<br>玩家 B 猜錯或猜對的原因是什麼呢？
+        </div>
+
+        <button class="btn-main show" onclick="resetGame()">換人玩！重新開始</button>
+    </div>
+
+</div>
+
+<div id="image-modal" class="image-modal" onclick="closeModal()">
+    <img id="modal-image" src="" alt="放大圖片">
+    <div class="close-text">點擊任意處關閉 ✖</div>
+</div>
+
+<script>
+    // --- 遊戲資料 ---
+    const loveLanguages = [
+        { id: 'c1', image: 'words.jpg', label: '肯定的言詞' }, // 把 icon 換成 image 路徑
+        { id: 'c2', image: 'gift.jpg', label: '真心的禮物' },
+        { id: 'c3', image: 'service.jpg', label: '服務的行動' },
+        { id: 'c4', image: 'time.jpg', label: '精心的時刻' },
+        { id: 'c5', image: 'touch.jpg', label: '身體的接觸' }
+    ];
+
+    // --- 遊戲狀態 ---
+    let playerA = { favs: [], thunder: null };
+    let playerB = { favs: [], thunder: null };
+
+    // --- 初始化與畫面渲染 ---
+    function initCards(containerId, playerPrefix) {
+        const container = document.getElementById(containerId);
+        container.innerHTML = ''; 
+        loveLanguages.forEach(lang => {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.id = `${playerPrefix}-${lang.id}`;
+            card.innerHTML = `
+                <img src="${lang.image}" alt="${lang.label}" style="width: 100%; height: auto; border-radius: 8px; margin-bottom: 10px;">
+                <span class="label">${lang.label}</span>
+            `;
+            card.onclick = () => handleCardClick(lang.id, playerPrefix);
+            container.appendChild(card);
+        });
+    }
+
+    // 處理卡牌點擊邏輯
+    function handleCardClick(langId, playerPrefix) {
+        const state = playerPrefix === 'a' ? playerA : playerB;
+        const btnConfirmId = playerPrefix === 'a' ? 'btn-confirm-a' : 'btn-confirm-b';
+        const instructionId = playerPrefix === 'a' ? 'instruction-a' : 'instruction-b';
+        const instructionEl = document.getElementById(instructionId);
+        const cardEl = document.getElementById(`${playerPrefix}-${langId}`);
+        
+        if (state.thunder !== null || cardEl.classList.contains('disabled') || 
+            state.favs.includes(langId) || state.thunder === langId) return;
+
+        if (state.favs.length < 2) {
+            state.favs.push(langId);
+            cardEl.classList.add('fav-selected');
+            
+            if (state.favs.length === 2) {
+                instructionEl.textContent = `請選擇 1 種最「不喜歡」的雷點 (0/1)`;
+                instructionEl.classList.add('thunder-mode');
+            } else {
+                instructionEl.textContent = `請選擇 2 種你最「喜歡」的愛之語 (${state.favs.length}/2)`;
+            }
+        } 
+        else if (state.thunder === null) {
+            state.thunder = langId;
+            cardEl.classList.add('thunder-selected');
+            
+            instructionEl.textContent = `選擇完成！`;
+            instructionEl.classList.remove('thunder-mode');
+            
+            loveLanguages.forEach(lang => {
+                if (!state.favs.includes(lang.id) && state.thunder !== lang.id) {
+                    document.getElementById(`${playerPrefix}-${lang.id}`).classList.add('disabled');
+                }
+            });
+
+            document.getElementById(btnConfirmId).classList.add('show');
+        }
+    }
+
+    // 天使卡選擇邏輯 (新增放大功能)
+    function selectAngelCard(index) {
+        const angelCards = document.querySelectorAll('.angel-card');
+        let clickedImgSrc = '';
+        
+        angelCards.forEach((card, i) => {
+            if (i === index) {
+                card.classList.add('selected');
+                card.classList.remove('dimmed');
+                // 抓取被點擊的那張圖片的路徑
+                clickedImgSrc = card.querySelector('img').src; 
+            } else {
+                card.classList.remove('selected');
+                card.classList.add('dimmed');
+            }
+        });
+
+        // 打開滿版遮罩，並把圖片塞進去
+        const modal = document.getElementById('image-modal');
+        const modalImg = document.getElementById('modal-image');
+        modalImg.src = clickedImgSrc;
+        modal.style.display = 'flex';
+
+        // 顯示確認按鈕
+        document.getElementById('btn-confirm-angel').classList.add('show');
+    }
+
+    // 新增：關閉滿版圖片的函數
+    function closeModal() {
+        document.getElementById('image-modal').style.display = 'none';
+    }
+
+    // 計算分數與呈現結果
+    function calculateAndShowResults() {
+        const resultA = document.getElementById('result-a');
+        const resultB = document.getElementById('result-b');
+        resultA.innerHTML = ''; resultB.innerHTML = '';
+        
+        let heartCount = 0;
+
+        const renderItem = (id, type) => {
+            const lang = loveLanguages.find(l => l.id === id);
+            const iconStr = type === 'fav' ? '❤️' : '⚡';
+            return `<div class="result-item ${type}">${iconStr} ${lang.label}</div>`;
+        };
+
+        playerA.favs.forEach(id => resultA.innerHTML += renderItem(id, 'fav'));
+        resultA.innerHTML += renderItem(playerA.thunder, 'thunder');
+
+        playerB.favs.forEach(id => {
+            resultB.innerHTML += renderItem(id, 'fav');
+            if (playerA.favs.includes(id)) heartCount += 1; 
+        });
+        
+        resultB.innerHTML += renderItem(playerB.thunder, 'thunder');
+        if (playerA.thunder === playerB.thunder) heartCount += 2; 
+
+        const heartsDisplay = document.getElementById('hearts-display');
+        heartsDisplay.textContent = heartCount > 0 ? '❤️'.repeat(heartCount) : '💔 (沒有猜中喔)';
+    }
+
+    // 控制步驟切換
+    function goToStep(stepNum) {
+        document.querySelectorAll('.step-section').forEach(el => el.classList.remove('active'));
+        document.getElementById(`step-${stepNum}`).classList.add('active');
+
+        if (stepNum === 2) {
+            initCards('cards-container-a', 'a');
+        } else if (stepNum === 4) {
+            initCards('cards-container-b', 'b');
+        } else if (stepNum === 5) {
+            calculateAndShowResults();
+        }
+    }
+
+    // 重新開始遊戲
+    function resetGame() {
+        playerA = { favs: [], thunder: null };
+        playerB = { favs: [], thunder: null };
+        
+        document.getElementById('instruction-a').textContent = "請選擇 2 種你最「喜歡」的愛之語 (0/2)";
+        document.getElementById('instruction-a').classList.remove('thunder-mode');
+        document.getElementById('btn-confirm-a').classList.remove('show');
+        
+        document.getElementById('instruction-b').textContent = "請猜測主角 A 最「喜歡」的 2 種愛之語 (0/2)";
+        document.getElementById('instruction-b').classList.remove('thunder-mode');
+        document.getElementById('btn-confirm-b').classList.remove('show');
+
+        // 重設天使卡狀態
+        const angelCards = document.querySelectorAll('.angel-card');
+        angelCards.forEach((card) => {
+            card.classList.remove('selected', 'dimmed');
+        });
+        document.getElementById('btn-confirm-angel').classList.remove('show');
+
+        goToStep(1);
+    }
+
+</script>
+
+</body>
+</html>
