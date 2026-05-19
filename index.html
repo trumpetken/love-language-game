@@ -2,8 +2,8 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>愛之語雙人 3D 沉浸版 (終極完整版)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>愛之語雙人 3D 沉浸版 (響應式 Swipe 版)</title>
     <style>
         :root {
             --primary: #ff85a1;
@@ -17,6 +17,7 @@
             margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
             background: #000; font-family: "Microsoft JhengHei", sans-serif;
             color: white; user-select: none; -webkit-user-select: none;
+            touch-action: pan-y; /* 確保滑動順暢 */
         }
 
         /* --- 3D 空間背景 --- */
@@ -59,11 +60,14 @@
 
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        h2 { color: var(--gold); text-shadow: 0 0 10px rgba(255,215,0,0.5); margin: 0 0 15px 0; font-size: 2rem; pointer-events: auto; }
+        h2 { color: var(--gold); text-shadow: 0 0 10px rgba(255,215,0,0.5); margin: 0 0 15px 0; font-size: 2rem; pointer-events: auto; text-align: center; }
         .instruction { background: rgba(0,0,0,0.6); padding: 10px 30px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(5px); font-size: 1.1rem; font-weight: bold; margin-bottom: 20px; pointer-events: auto; text-align: center; }
 
-        /* --- 3D 牌陣容器 --- */
-        .cards-stage { position: relative; width: 100%; flex: 1; perspective: 1000px; transform-style: preserve-3d; display: flex; justify-content: center; align-items: center; pointer-events: auto; margin-top: -30px; }
+        /* --- 3D 牌陣容器 (桌面版) --- */
+        .cards-stage { 
+            position: relative; width: 100%; flex: 1; perspective: 1000px; transform-style: preserve-3d; 
+            display: flex; justify-content: center; align-items: center; pointer-events: auto; margin-top: -30px; 
+        }
 
         /* --- 實體卡牌基礎樣式 --- */
         .card {
@@ -74,7 +78,6 @@
             transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
         }
 
-        /* 將卡牌視覺(背景、邊框)獨立包裝，讓外層按鈕不會被裁切 */
         .card-visual {
             position: absolute; width: 100%; height: 100%; top: 0; left: 0;
             border: 2px solid var(--gold); border-radius: 12px;
@@ -86,7 +89,6 @@
         .card.dealing { transition: none !important; animation: dealAnim 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) both; }
         .card.dealt { transform: translateX(var(--tx)) rotateY(var(--ry)) translateZ(var(--tz)); opacity: 1; pointer-events: auto; }
 
-        /* --- 全新縮放刷新動畫 (Pop-in/out) --- */
         .card.refreshing {
             transform: translateX(var(--tx)) rotateY(var(--ry)) translateZ(var(--tz)) scale(0.1) !important;
             opacity: 0 !important;
@@ -109,20 +111,21 @@
             .refresh-btn:hover:not(.disabled) { background: var(--gold); color: black; transform: translateX(-50%) scale(1.15); box-shadow: 0 0 15px var(--gold); }
             .btn-main:hover:not(:disabled) { background: var(--primary); color: #000; text-shadow: none; box-shadow: 0 0 25px var(--primary); }
             .nav-btn:hover { color: var(--primary); transform: translateY(-50%) scale(1.2); }
+            .close-mascot-btn:hover { background: #ff2a3f; transform: scale(1.15); }
         }
 
         .card-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.7; z-index: 1; transition: opacity 0.3s; }
-        .card-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.6) 100%); z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .card-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.6) 100%); z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
         .card-label { color: var(--gold); font-weight: bold; font-size: 1.3rem; text-shadow: 0 0 10px #000, 0 0 5px var(--gold); text-align: center; padding: 10px; }
         
-        .zoom-btn { position: absolute; top: 10px; right: 10px; z-index: 10; background: rgba(0,0,0,0.6); border: 1px solid var(--gold); color: white; border-radius: 50%; width: 35px; height: 35px; display: flex; justify-content: center; align-items: center; font-size: 1.1rem; transition: 0.2s; }
+        .zoom-btn { position: absolute; top: 10px; right: 10px; z-index: 10; background: rgba(0,0,0,0.6); border: 1px solid var(--gold); color: white; border-radius: 50%; width: 35px; height: 35px; display: flex; justify-content: center; align-items: center; font-size: 1.1rem; transition: 0.2s; pointer-events: auto; }
         
-        /* 全新獨立上方刷新按鈕 */
         .refresh-btn { 
             position: absolute; top: -55px; left: 50%; transform: translateX(-50%); z-index: 10; 
             background: rgba(20, 20, 30, 0.8); border: 2px solid var(--gold); color: white; 
             border-radius: 50%; width: 42px; height: 42px; display: flex; justify-content: center; 
             align-items: center; font-size: 1.2rem; transition: 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.6);
+            pointer-events: auto;
         }
         .refresh-btn.disabled { opacity: 0.3; pointer-events: none; filter: grayscale(100%); border-color: #777; box-shadow: none; }
 
@@ -146,9 +149,7 @@
         .image-modal img { max-width: 90%; max-height: 80vh; border-radius: 12px; box-shadow: 0 0 30px rgba(255,255,255,0.2); }
         .close-text { color: white; margin-top: 20px; font-size: 1.2em; cursor: pointer; letter-spacing: 2px; }
 
-        /* ================================
-           教學與精靈開關專用樣式
-           ================================ */
+        /* 教學與精靈開關專用樣式 */
         .switches-container { display: flex; flex-direction: column; gap: 15px; margin-bottom: 30px; }
         .toggle-wrapper { display: flex; align-items: center; justify-content: space-between; gap: 20px; z-index: 20; pointer-events: auto; background: rgba(0,0,0,0.5); padding: 10px 20px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(5px); width: 280px; }
         .switch { position: relative; display: inline-block; width: 52px; height: 28px; }
@@ -176,11 +177,20 @@
         #mascot-ui { position: absolute; bottom: 20px; right: 30px; display: none; align-items: flex-end; gap: 10px; z-index: 200; opacity: 0; transform: translateY(20px); transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events: none; }
         #mascot-ui.show { opacity: 1; transform: translateY(0); }
         .mascot-img { width: 140px; height: auto; filter: drop-shadow(0 0 15px rgba(255, 133, 161, 0.5)); animation: floatMascot 3.5s ease-in-out infinite; }
-        .speech-bubble { background: rgba(255,255,255,0.95); color: #2f3542; padding: 15px 25px; border-radius: 20px 20px 0 20px; border: 3px solid var(--gold); box-shadow: 0 10px 25px rgba(0,0,0,0.5); font-weight: bold; font-size: 1.1rem; line-height: 1.6; position: relative; max-width: 280px; margin-bottom: 50px; text-align: left; }
-        .speech-bubble::after { content: ''; position: absolute; bottom: -3px; right: -16px; border-width: 15px 0 0 15px; border-style: solid; border-color: transparent transparent transparent rgba(255,255,255,0.95); display: block; width: 0; filter: drop-shadow(4px 0px 0px var(--gold)); }
+        
+        .speech-bubble { background: rgba(255,255,255,0.95); color: #2f3542; padding: 15px 25px; border-radius: 20px 20px 0 20px; border: 3px solid var(--gold); box-shadow: 0 10px 25px rgba(0,0,0,0.5); font-weight: bold; font-size: 1.1rem; line-height: 1.6; position: relative; max-width: 280px; margin-bottom: 50px; text-align: left; pointer-events: auto; }
+        .speech-bubble::after { content: ''; position: absolute; bottom: -3px; right: -16px; border-width: 15px 0 0 15px; border-style: solid; border-color: transparent transparent transparent rgba(255,255,255,0.95); display: block; width: 0; filter: drop-shadow(4px 0px 0px var(--gold)); pointer-events: none;}
+        
+        .close-mascot-btn { 
+            position: absolute; top: -12px; left: -12px; background: var(--thunder-color); color: white; border: 2px solid white;
+            border-radius: 50%; width: 26px; height: 26px; display: flex; justify-content: center; align-items: center;
+            font-size: 14px; font-weight: bold; cursor: pointer; box-shadow: 0 3px 8px rgba(0,0,0,0.5); pointer-events: auto;
+            transition: 0.2s;
+        }
+
         @keyframes floatMascot { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
 
-        /* --- 動態結算畫面專用樣式 --- */
+        /* 動態結算畫面專用樣式 */
         .result-container { background: rgba(0,0,0,0.7); border: 1px solid var(--gold); border-radius: 16px; padding: 20px; width: 90%; max-width: 800px; display: flex; flex-direction: column; backdrop-filter: blur(10px); pointer-events: auto; margin-top: 10px; }
         .res-section { display: flex; width: 100%; justify-content: space-around; margin-bottom: 15px; }
         .res-group { display: flex; gap: 15px; align-items: center; justify-content: center; min-width: 250px;}
@@ -195,9 +205,88 @@
         .res-card-wrap.match-fav .res-card-front { border-color: var(--fav-color); box-shadow: 0 0 25px var(--fav-color); }
         .res-card-wrap.match-thunder .res-card-front { border-color: var(--thunder-color); box-shadow: 0 0 25px var(--thunder-color); }
         .flying-heart { position: fixed; z-index: 9999; font-size: 2.5rem; pointer-events: none; transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94); text-shadow: 0 0 15px rgba(255, 71, 87, 0.8); }
+
+        /* =========================================================
+           📱 手機版響應式設計 RWD (Swipe 滑動模式)
+           ========================================================= */
+        @media (max-width: 768px) {
+            h1 { font-size: 2.8rem !important; }
+            h2 { font-size: 1.6rem !important; margin-bottom: 10px !important; }
+            .instruction { font-size: 0.95rem; padding: 10px 20px; width: 85%; margin-bottom: 10px; }
+            
+            /* 將牌陣改為水平滑動容器 (Scroll Snap) */
+            .cards-stage {
+                justify-content: flex-start;
+                overflow-x: auto;
+                scroll-snap-type: x mandatory;
+                padding: 0 calc(50vw - 90px); /* 精算 padding，讓第一張與最後一張完美置中 */
+                -webkit-overflow-scrolling: touch; /* iOS 順滑滾動 */
+                scrollbar-width: none; /* Firefox 隱藏捲軸 */
+                gap: 15px; /* 卡牌之間的間距 */
+                perspective: none;
+                transform-style: flat;
+                margin-top: 10px;
+                /* 稍微增加高度給刷新按鈕空間 */
+                align-items: flex-end; 
+                padding-bottom: 30px;
+            }
+            .cards-stage::-webkit-scrollbar { display: none; /* Chrome 隱藏捲軸 */ }
+
+            /* 卡牌取消絕對定位，改為 Flex 元素 */
+            .card {
+                position: relative;
+                flex: 0 0 180px;
+                scroll-snap-align: center;
+                /* 覆蓋從右側飛入，改為從下方浮出 */
+                transform: translateY(100vh);
+            }
+
+            /* 重新定義手機版的發牌動畫 */
+            @keyframes dealAnim {
+                0% { transform: translateY(50vh); opacity: 0; }
+                100% { transform: translateY(0); opacity: 1; }
+            }
+
+            /* 覆蓋桌面版帶有變數的 transform，改由 CSS 掌控位置 */
+            .card.dealt { transform: translateY(0); }
+
+            /* 手機版的選取與刷新特效 */
+            .card.selected-fav, .card.selected-thunder {
+                transform: translateY(-15px) scale(1.05) !important;
+            }
+            .card.refreshing {
+                transform: scale(0.1) !important;
+            }
+
+            /* 刷新按鈕位置微調 */
+            .refresh-btn { top: -45px; width: 36px; height: 36px; font-size: 1rem; }
+
+            /* 手機版頂部按鈕微調 */
+            #top-restart-btn, #top-mascot-btn { font-size: 0.85rem !important; padding: 8px 12px !important; }
+
+            /* 結算畫面縮小以適應手機螢幕 */
+            .result-container { padding: 15px 10px; }
+            .res-card-wrap { width: 70px; height: 115px; }
+            .res-group { gap: 8px; min-width: auto; }
+            .res-section { gap: 10px; }
+            .result-container h3 { font-size: 0.95rem !important; }
+
+            /* 教學 Modal 微調 */
+            .tutorial-content { padding: 20px 15px; width: 95%; }
+            .slide img { max-height: 35vh; }
+            .slide p { font-size: 1.05rem; padding: 0 10px; }
+            .nav-btn { font-size: 2.2rem; }
+            
+            /* 精靈對話框微調 */
+            .speech-bubble { max-width: 200px; font-size: 0.95rem; padding: 12px 18px; margin-bottom: 30px; }
+            .mascot-img { width: 100px; }
+            #mascot-ui { bottom: 10px; right: 10px; }
+        }
     </style>
 </head>
 <body>
+
+<button id="top-mascot-btn" class="btn-main" style="position: fixed; top: 15px; left: 20px; z-index: 9999; display: none; padding: 10px 20px; margin: 0; font-size: 1rem; width: auto;" onclick="toggleFloatingMascot()">✨ 隱藏精靈</button>
 
 <button id="top-restart-btn" class="btn-main" style="position: fixed; top: 15px; right: 20px; z-index: 9999; display: none; padding: 10px 20px; margin: 0; font-size: 1rem; width: auto;" onclick="goToStep(0)">🔄 重新開始</button>
 
@@ -263,7 +352,7 @@
     </div>
 
     <div id="step-1" class="step-section">
-        <h2>選擇情境</h2><div class="instruction">請點擊牌卡查看，可點擊上方 🔄 重新抽牌。</div>
+        <h2>選擇情境</h2><div class="instruction">左右滑動牌卡查看，可點擊上方 🔄 重新抽牌。</div>
         <div class="cards-stage" id="stage-1"></div><button id="btn-confirm-1" class="btn-main" onclick="goToStep(2)">看完情境了，進入下一步</button>
     </div>
 
@@ -317,7 +406,10 @@
     </div>
 
     <div id="mascot-ui">
-        <div class="speech-bubble" id="mascot-text"></div>
+        <div class="speech-bubble">
+            <div class="close-mascot-btn" onclick="closeMascot(event)" title="暫時隱藏精靈">✖</div>
+            <div id="mascot-text"></div>
+        </div>
         <img src="spirit.png" class="mascot-img" alt="日記精靈">
     </div>
 
@@ -333,6 +425,7 @@
     let carouselEnabled = true;
     let mascotEnabled = true;
     let currentSlide = 0;
+    let currentStepNum = 0;
 
     window.addEventListener('DOMContentLoaded', () => {
         const savedCarousel = localStorage.getItem('loveLangCarousel');
@@ -345,6 +438,7 @@
             mascotEnabled = savedMascot === 'true';
             document.getElementById('mascot-toggle').checked = mascotEnabled;
         }
+        updateMascotBtnText();
     });
 
     function toggleSettings() {
@@ -353,6 +447,9 @@
 
         mascotEnabled = document.getElementById('mascot-toggle').checked;
         localStorage.setItem('loveLangMascot', mascotEnabled);
+        
+        updateMascotBtnText();
+        updateMascot(currentStepNum);
     }
 
     function checkTutorialAndStart() {
@@ -399,21 +496,62 @@
         document.querySelector('.prev-btn').style.display = (currentSlide === 0) ? 'none' : 'block';
     }
 
-    // 精靈對白庫
+    // --- 精靈常駐左上角開關與手動隱藏邏輯 ---
+    function updateMascotBtnText() {
+        let btn = document.getElementById('top-mascot-btn');
+        if(btn) {
+            if (mascotEnabled) {
+                btn.innerHTML = "✨ 隱藏精靈";
+                btn.style.background = "rgba(0,0,0,0.6)";
+                btn.style.borderColor = "var(--gold)";
+            } else {
+                btn.innerHTML = "🧚 呼叫精靈";
+                btn.style.background = "var(--primary)";
+                btn.style.borderColor = "#fff";
+            }
+        }
+    }
+
+    function toggleFloatingMascot() {
+        mascotEnabled = !mascotEnabled;
+        localStorage.setItem('loveLangMascot', mascotEnabled);
+        
+        let toggle = document.getElementById('mascot-toggle');
+        if(toggle) toggle.checked = mascotEnabled;
+
+        updateMascotBtnText();
+        updateMascot(currentStepNum);
+    }
+
+    function closeMascot(event) {
+        if (event) event.stopPropagation();
+        mascotEnabled = false;
+        document.getElementById('mascot-toggle').checked = false;
+        localStorage.setItem('loveLangMascot', 'false');
+        
+        updateMascotBtnText(); 
+        
+        const mascot = document.getElementById('mascot-ui');
+        mascot.classList.remove('show');
+        setTimeout(() => { mascot.style.display = 'none'; }, 400);
+    }
+
+    // 精靈對白庫 
     const tutorialTexts = {
         1: "你好！我是日記精靈✨<br>請 <span style='color:var(--thunder-color);'>謎語人</span> 和 <span style='color:var(--fav-color);'>解謎者</span> 一起選擇一個想探討的情境吧！",
         2: "現在由 <span style='color:var(--thunder-color);'>謎語人</span> 操作喔！<br>請選出 2 張你最「喜歡」的愛之語。",
         3: "接下來，選出 1 張你最「不喜歡」的雷點吧！這可是大魔王呢😈",
         4: "換 <span style='color:var(--fav-color);'>解謎者</span> 接手囉！<br>請點選一張天使卡，讓 <span style='color:var(--thunder-color);'>謎語人</span> 回答以獲取線索！",
         5: "<span style='color:var(--fav-color);'>解謎者</span>，根據剛才的線索，猜猜 <span style='color:var(--thunder-color);'>謎語人</span> 最喜歡哪 2 種愛之語吧！",
-        6: "最後一步！猜出 <span style='color:var(--thunder-color);'>謎語人</span> 心中的大魔王（雷點）是哪一張吧！"
+        6: "最後一步！猜出 <span style='color:var(--thunder-color);'>謎語人</span> 心中的大魔王（雷點）是哪一張吧！",
+        7: "結算報告出來囉！<br>快看看你們的默契，並互相分享原因吧！"
     };
 
     function updateMascot(stepNum) {
         const mascot = document.getElementById('mascot-ui');
         const textEl = document.getElementById('mascot-text');
         
-        if (!mascotEnabled || stepNum === 0 || stepNum === 7) {
+        if (!mascotEnabled || stepNum === 0) {
             mascot.classList.remove('show');
             setTimeout(() => { mascot.style.display = 'none'; }, 400);
             return;
@@ -441,12 +579,11 @@
     ];
 
     const allScenarios = ['s1.jpg', 's2.jpg', 's3.jpg', 's4.jpg', 's5.jpg', 's6.jpg'];
-    // 擴充至 6 張天使卡
     const angelCards = ['angel1.jpg', 'angel2.jpg', 'angel3.jpg', 'angel4.jpg', 'angel5.jpg', 'angel6.jpg'];
 
     let gameState = { a_fav: [], a_thunder: [], b_fav: [], b_thunder: [] };
     let currentTempSelection = []; 
-    let cardPools = {}; // 剩餘的卡牌庫 (供刷新使用)
+    let cardPools = {}; // 剩餘的卡牌庫 
 
     const flat3 = [ {tx: -240, ry: 0, tz: 0}, {tx: 0, ry: 0, tz: 0}, {tx: 240, ry: 0, tz: 0} ];
     const flat5 = [ {tx: -420, ry: 0, tz: 0}, {tx: -210, ry: 0, tz: 0}, {tx: 0, ry: 0, tz: 0}, {tx: 210, ry: 0, tz: 0}, {tx: 420, ry: 0, tz: 0} ];
@@ -479,12 +616,10 @@
 
             let innerHTML = '';
             
-            // 獨立於卡片視覺外的刷新按鈕
             if (hasRefresh) {
                 innerHTML += `<div class="refresh-btn" title="重抽一次" onclick="event.stopPropagation(); refreshCard(this, '${stageId}')">🔄</div>`;
             }
 
-            // 卡片視覺容器
             innerHTML += `<div class="card-visual">`;
             innerHTML += `<img src="${card.dataset.imgSrc}" class="card-bg">`;
             
@@ -496,7 +631,7 @@
                 innerHTML += `<div class="card-overlay" style="background: rgba(0,0,0,0.3);"><div class="card-label">${item.label || ''}</div></div>`;
                 card.onclick = () => handleScenarioAngelClick(card, card.dataset.imgSrc);
             }
-            innerHTML += `</div>`; // .card-visual 結束
+            innerHTML += `</div>`; 
             
             card.innerHTML = innerHTML; 
             stage.appendChild(card);
@@ -514,37 +649,32 @@
         if (!pool || pool.length === 0) return;
         
         let cardEl = btnEl.closest('.card');
-        let newItem = pool.pop(); // 從牌庫抽一張
+        let newItem = pool.pop(); 
         
-        btnEl.classList.add('disabled'); // 按鈕只能用一次
+        btnEl.classList.add('disabled'); 
         
-        // 1. 觸發縮小消失特效
         cardEl.classList.add('refreshing');
         
         setTimeout(() => {
-            // 替換圖片
             let newImgSrc = newItem.image || newItem;
             cardEl.dataset.imgSrc = newImgSrc;
             cardEl.querySelector('.card-bg').src = newImgSrc;
             
-            // 刷新後取消原有的選取狀態
             if(cardEl.classList.contains('selected-fav')) {
                 cardEl.classList.remove('selected-fav');
                 let cBtn = document.getElementById(`btn-confirm-${stageId.split('-')[1]}`);
                 if(cBtn && (stageId !== 'stage-1' && stageId !== 'stage-4')) cBtn.disabled = true;
             }
             
-            // 2. 觸發彈跳放大特效
             cardEl.classList.remove('refreshing');
             cardEl.classList.add('popping-in');
             
             setTimeout(() => cardEl.classList.remove('popping-in'), 400);
             
-            // 若牌庫抽光，禁用所有剩下的按鈕
             if (pool.length === 0) {
                 document.querySelectorAll(`#${stageId} .refresh-btn`).forEach(b => b.classList.add('disabled'));
             }
-        }, 200); // 等待縮小完畢 (0.2s)
+        }, 200); 
     }
 
     function handleScenarioAngelClick(cardEl, imgSrc) {
@@ -552,7 +682,7 @@
         stage.querySelectorAll('.card').forEach(c => { c.classList.remove('selected-fav', 'dimmed'); });
         cardEl.classList.add('selected-fav'); 
         stage.querySelectorAll('.card').forEach(c => { if (c !== cardEl) c.classList.add('dimmed'); });
-        openModal(cardEl.dataset.imgSrc); // 讀取最新的動態圖片
+        openModal(cardEl.dataset.imgSrc); 
     }
 
     function handleLoveLangClick(cardEl, langId, maxCount, typeStr, btnId, stateKey) {
@@ -561,16 +691,34 @@
         const instEl = document.getElementById(`inst-${btnId.split('-')[2]}`);
 
         if (isSelected) {
-            currentTempSelection = currentTempSelection.filter(id => id !== langId); cardEl.classList.remove(selectedClass);
+            currentTempSelection = currentTempSelection.filter(id => id !== langId); 
+            cardEl.classList.remove(selectedClass);
         } else {
-            if (currentTempSelection.length < maxCount) { currentTempSelection.push(langId); cardEl.classList.add(selectedClass); }
+            if (maxCount === 1) {
+                currentTempSelection = [langId];
+                const stage = cardEl.parentElement;
+                stage.querySelectorAll('.card').forEach(c => c.classList.remove(selectedClass));
+                cardEl.classList.add(selectedClass);
+            } else {
+                if (currentTempSelection.length < maxCount) { 
+                    currentTempSelection.push(langId); 
+                    cardEl.classList.add(selectedClass); 
+                }
+            }
         }
+
         const word = typeStr === 'fav' ? '喜歡' : '不喜歡';
         if(instEl) instEl.textContent = `請選擇 ${maxCount} 種你最「${word}」的愛之語 (${currentTempSelection.length}/${maxCount})`;
         
-        if (currentTempSelection.length === maxCount) { document.getElementById(btnId).disabled = false; gameState[stateKey] = [...currentTempSelection]; } 
-        else { document.getElementById(btnId).disabled = true; }
+        if (currentTempSelection.length === maxCount) { 
+            document.getElementById(btnId).disabled = false; 
+            gameState[stateKey] = [...currentTempSelection]; 
+        } else { 
+            document.getElementById(btnId).disabled = true; 
+        }
     }
+
+    function stageIdNum(btnId) { return btnId.split('-')[2]; }
 
     // ==========================================
     // 結算與動畫展演核心 
@@ -683,12 +831,15 @@
 
     // --- 路由器 ---
     function goToStep(stepNum) {
+        currentStepNum = stepNum;
         document.querySelectorAll('.step-section').forEach(el => el.classList.remove('active'));
         document.getElementById(`step-${stepNum}`).classList.add('active');
 
-        // 控制常駐右上角重新開始按鈕
+        // 控制常駐上方按鈕
         document.getElementById('top-restart-btn').style.display = (stepNum === 0) ? 'none' : 'block';
+        document.getElementById('top-mascot-btn').style.display = (stepNum === 0) ? 'none' : 'block';
 
+        updateMascotBtnText();
         updateMascot(stepNum);
 
         if (stepNum === 1) {
@@ -703,7 +854,7 @@
         else if (stepNum === 4) {
             let shuffled = [...angelCards].sort(() => 0.5 - Math.random());
             let onTable = shuffled.slice(0, 3);
-            cardPools['stage-4'] = shuffled.slice(3); // 剩餘 3 張進牌庫
+            cardPools['stage-4'] = shuffled.slice(3); // 剩餘進牌庫
             dealCards('stage-4', onTable, false);
         }
         else if (stepNum === 5) dealCards('stage-5', loveLanguages, true, 2, 'fav', 'b_fav');
