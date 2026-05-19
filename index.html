@@ -74,7 +74,13 @@
             position: absolute; width: 180px; height: 350px;
             cursor: pointer; transform-style: preserve-3d;
             transform: translateX(100vw) translateZ(-800px) rotateY(-45deg); 
-            opacity: 0; pointer-events: none; z-index: 1; touch-action: manipulation;
+            opacity: 0; pointer-events: none; z-index: 1; 
+            
+            /* 💡 新增這三行：徹底解決手機需要點兩下的延遲問題 */
+            touch-action: pan-x pan-y; 
+            -webkit-tap-highlight-color: transparent; 
+            outline: none; 
+            
             transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
         }
 
