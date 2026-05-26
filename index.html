@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>愛之語雙人 3D 沉浸版 (響應式 Swipe 版)</title>
+    <title>愛之語雙人 3D 沉浸版 (終極完整版)</title>
     <style>
         :root {
             --primary: #ff85a1;
@@ -11,13 +11,14 @@
             --fav-color: #2ed573;       /* 解謎者代表色 (綠) */
             --thunder-color: #ff4757;   /* 謎語人代表色 (紅) */
             --bg-dark: #0f0c29;
+            --pve-blue: #4facfe;        /* PVE 專屬色 */
         }
 
         body, html {
             margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
             background: #000; font-family: "Microsoft JhengHei", sans-serif;
             color: white; user-select: none; -webkit-user-select: none;
-            touch-action: pan-y; /* 確保滑動順暢 */
+            touch-action: pan-y;
         }
 
         /* --- 3D 空間背景 --- */
@@ -63,7 +64,91 @@
         h2 { color: var(--gold); text-shadow: 0 0 10px rgba(255,215,0,0.5); margin: 0 0 15px 0; font-size: 2rem; pointer-events: auto; text-align: center; }
         .instruction { background: rgba(0,0,0,0.6); padding: 10px 30px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(5px); font-size: 1.1rem; font-weight: bold; margin-bottom: 20px; pointer-events: auto; text-align: center; }
 
-        /* --- 3D 牌陣容器 (桌面版) --- */
+        /* ================================
+           全新：模式選擇與 PVE 角色選擇樣式
+           ================================ */
+        
+        /* 模式選擇卡牌 (PVP / PVE) */
+        .mode-cards-container {
+            display: flex; gap: 30px; justify-content: center; align-items: center;
+            margin-top: 20px; width: 100%; pointer-events: auto; flex-wrap: wrap;
+        }
+        .mode-card {
+            width: 260px; height: 320px; background: rgba(20, 20, 40, 0.8);
+            border: 3px solid #555; border-radius: 16px; cursor: pointer;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            position: relative; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            backdrop-filter: blur(10px);
+        }
+        .mode-card::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent); z-index: 1;
+        }
+        .mode-card-icon {
+            font-size: 4rem; margin-bottom: 20px; z-index: 2; transition: all 0.3s;
+        }
+        .mode-card h3 { color: #fff; font-size: 1.8rem; margin: 0 0 10px 0; z-index: 2; text-shadow: 0 2px 5px rgba(0,0,0,0.8); }
+        .mode-card p { color: #aaa; font-size: 1.1rem; margin: 0; font-weight: bold; z-index: 2; transition: 0.3s; }
+
+        .mode-card.image-mode {
+            padding: 0; background: transparent; border: none;
+        }
+        .mode-card.image-mode::before { display: none; }
+        .mode-card-img {
+            width: 100%; height: 100%; object-fit: contain; display: block;
+            border-radius: 16px; pointer-events: none;
+        }
+
+        .mode-card:hover { transform: translateY(-10px); }
+        .mode-card.pvp:hover { border-color: var(--primary); box-shadow: 0 0 30px rgba(255, 133, 161, 0.5); }
+        .mode-card.pvp:hover p { color: var(--primary); }
+        .mode-card.pvp:hover .mode-card-icon { text-shadow: 0 0 20px var(--primary); transform: scale(1.1); }
+        
+        .mode-card.pve:hover { border-color: var(--pve-blue); box-shadow: 0 0 30px rgba(79, 172, 254, 0.5); }
+        .mode-card.pve:hover p { color: var(--pve-blue); }
+        .mode-card.pve:hover .mode-card-icon { text-shadow: 0 0 20px var(--pve-blue); transform: scale(1.1); }
+
+        /* PVE 傾斜角色選擇卡牌 */
+        .char-container {
+            display: flex; gap: 25px; justify-content: center; 
+            height: 60vh; min-height: 400px; width: 90%; max-width: 900px; 
+            pointer-events: auto; margin-top: 10px;
+        }
+        .char-card {
+            flex: 1; position: relative; overflow: hidden; cursor: pointer;
+            transform: skewX(-8deg); /* 傾斜設計 */
+            border: 3px solid #444; background: #111; border-radius: 12px;
+            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+        }
+        .char-bg {
+            position: absolute; top: -10%; left: -20%; width: 140%; height: 120%;
+            background-size: cover; background-position: top center; background-repeat: no-repeat;
+            transform: skewX(8deg); /* 把背景圖轉正 */
+            transition: all 0.4s; opacity: 0.5; filter: grayscale(60%) brightness(0.7);
+        }
+        .char-info {
+            position: absolute; bottom: 0; left: 0; width: 100%; padding: 40px 30px 20px;
+            background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.6) 60%, transparent 100%);
+            transform: skewX(8deg); /* 把文字轉正 */
+            color: white; transition: all 0.4s; text-align: center;
+        }
+        .char-name { font-size: 2.2rem; font-weight: bold; color: #fff; text-shadow: 0 0 10px rgba(0,0,0,0.8); margin-bottom: 10px; transition: 0.3s;}
+        .char-desc { font-size: 1rem; line-height: 1.5; color: #ddd; text-shadow: 0 0 5px #000; opacity: 0; transform: translateY(20px); transition: all 0.3s; font-style: italic; }
+
+        .char-card:hover { 
+            flex: 1.3; border-color: var(--pve-blue); 
+            box-shadow: 0 0 40px rgba(79, 172, 254, 0.5), inset 0 0 20px rgba(79, 172, 254, 0.3); 
+            z-index: 10; 
+        }
+        .char-card:hover .char-bg { opacity: 1; filter: grayscale(0%) brightness(1.1); transform: skewX(8deg) scale(1.05); }
+        .char-card:hover .char-info { padding-bottom: 30px; background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(79,172,254,0.4) 100%); }
+        .char-card:hover .char-name { color: var(--gold); text-shadow: 0 0 15px var(--gold); }
+        .char-card:hover .char-desc { opacity: 1; transform: translateY(0); }
+
+
+        /* --- 3D 牌陣容器 --- */
         .cards-stage { 
             position: relative; width: 100%; flex: 1; perspective: 1000px; transform-style: preserve-3d; 
             display: flex; justify-content: center; align-items: center; pointer-events: auto; margin-top: -30px; 
@@ -75,12 +160,7 @@
             cursor: pointer; transform-style: preserve-3d;
             transform: translateX(100vw) translateZ(-800px) rotateY(-45deg); 
             opacity: 0; pointer-events: none; z-index: 1; 
-            
-            /* 💡 新增這三行：徹底解決手機需要點兩下的延遲問題 */
-            touch-action: pan-x pan-y; 
-            -webkit-tap-highlight-color: transparent; 
-            outline: none; 
-            
+            touch-action: pan-x pan-y; -webkit-tap-highlight-color: transparent; outline: none; 
             transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
         }
 
@@ -220,70 +300,56 @@
             h2 { font-size: 1.6rem !important; margin-bottom: 10px !important; }
             .instruction { font-size: 0.95rem; padding: 10px 20px; width: 85%; margin-bottom: 10px; }
             
+            /* 將模式選擇改為直向或較小卡片 */
+            .mode-card { width: 200px; height: 260px; }
+            .mode-card-icon { font-size: 3rem; }
+            .mode-card h3 { font-size: 1.5rem; }
+
+            /* PVE 角色選擇直向堆疊 */
+            .char-container { flex-direction: column; height: auto; transform: none; }
+            .char-card { transform: skewX(0deg); height: 250px; border-radius: 16px; margin-bottom: 15px; }
+            .char-bg { transform: skewX(0deg); top: 0; left: 0; width: 100%; height: 100%; }
+            .char-info { transform: skewX(0deg); padding: 20px; }
+            .char-card:hover { transform: translateY(-5px); }
+            .char-card:hover .char-bg { transform: scale(1.05); }
+
             /* 將牌陣改為水平滑動容器 (Scroll Snap) */
             .cards-stage {
-                justify-content: flex-start;
-                overflow-x: auto;
-                scroll-snap-type: x mandatory;
-                padding: 0 calc(50vw - 90px); /* 精算 padding，讓第一張與最後一張完美置中 */
-                -webkit-overflow-scrolling: touch; /* iOS 順滑滾動 */
-                scrollbar-width: none; /* Firefox 隱藏捲軸 */
-                gap: 15px; /* 卡牌之間的間距 */
-                perspective: none;
-                transform-style: flat;
-                margin-top: 10px;
-                /* 稍微增加高度給刷新按鈕空間 */
-                align-items: flex-end; 
-                padding-bottom: 30px;
+                justify-content: flex-start; overflow-x: auto; scroll-snap-type: x mandatory;
+                padding: 0 calc(50vw - 90px); -webkit-overflow-scrolling: touch; scrollbar-width: none; 
+                gap: 15px; perspective: none; transform-style: flat; margin-top: 10px;
+                align-items: flex-end; padding-bottom: 30px;
             }
-            .cards-stage::-webkit-scrollbar { display: none; /* Chrome 隱藏捲軸 */ }
+            .cards-stage::-webkit-scrollbar { display: none; }
 
-            /* 卡牌取消絕對定位，改為 Flex 元素 */
             .card {
-                position: relative;
-                flex: 0 0 180px;
-                scroll-snap-align: center;
-                /* 覆蓋從右側飛入，改為從下方浮出 */
+                position: relative; flex: 0 0 180px; scroll-snap-align: center;
                 transform: translateY(100vh);
             }
 
-            /* 重新定義手機版的發牌動畫 */
             @keyframes dealAnim {
                 0% { transform: translateY(50vh); opacity: 0; }
                 100% { transform: translateY(0); opacity: 1; }
             }
 
-            /* 覆蓋桌面版帶有變數的 transform，改由 CSS 掌控位置 */
             .card.dealt { transform: translateY(0); }
+            .card.selected-fav, .card.selected-thunder { transform: translateY(-15px) scale(1.05) !important; }
+            .card.refreshing { transform: scale(0.1) !important; }
 
-            /* 手機版的選取與刷新特效 */
-            .card.selected-fav, .card.selected-thunder {
-                transform: translateY(-15px) scale(1.05) !important;
-            }
-            .card.refreshing {
-                transform: scale(0.1) !important;
-            }
-
-            /* 刷新按鈕位置微調 */
             .refresh-btn { top: -45px; width: 36px; height: 36px; font-size: 1rem; }
-
-            /* 手機版頂部按鈕微調 */
             #top-restart-btn, #top-mascot-btn { font-size: 0.85rem !important; padding: 8px 12px !important; }
 
-            /* 結算畫面縮小以適應手機螢幕 */
             .result-container { padding: 15px 10px; }
             .res-card-wrap { width: 70px; height: 115px; }
             .res-group { gap: 8px; min-width: auto; }
             .res-section { gap: 10px; }
             .result-container h3 { font-size: 0.95rem !important; }
 
-            /* 教學 Modal 微調 */
             .tutorial-content { padding: 20px 15px; width: 95%; }
             .slide img { max-height: 35vh; }
             .slide p { font-size: 1.05rem; padding: 0 10px; }
             .nav-btn { font-size: 2.2rem; }
             
-            /* 精靈對話框微調 */
             .speech-bubble { max-width: 200px; font-size: 0.95rem; padding: 12px 18px; margin-bottom: 30px; }
             .mascot-img { width: 100px; }
             #mascot-ui { bottom: 10px; right: 10px; }
@@ -294,7 +360,7 @@
 
 <button id="top-mascot-btn" class="btn-main" style="position: fixed; top: 15px; left: 20px; z-index: 9999; display: none; padding: 10px 20px; margin: 0; font-size: 1rem; width: auto;" onclick="toggleFloatingMascot()">✨ 隱藏精靈</button>
 
-<button id="top-restart-btn" class="btn-main" style="position: fixed; top: 15px; right: 20px; z-index: 9999; display: none; padding: 10px 20px; margin: 0; font-size: 1rem; width: auto;" onclick="goToStep(0)">🔄 重新開始</button>
+<button id="top-restart-btn" class="btn-main" style="position: fixed; top: 15px; right: 20px; z-index: 9999; display: none; padding: 10px 20px; margin: 0; font-size: 1rem; width: auto;" onclick="goToModeSelect()">🔄 回首頁</button>
 
 <div id="room-env"><div class="floor"></div><div class="center-glow"></div></div>
 
@@ -333,9 +399,53 @@
 
 <div class="app-container">
     
-    <div id="step-0" class="step-section active" style="justify-content: center;">
+    <div id="mode-select-screen" class="step-section active" style="justify-content: center;">
+        <h1 style="font-size: 3.5rem; color: #fff; text-shadow: 0 0 20px var(--primary); font-family: serif; margin-bottom: 20px;">愛之語</h1>
+        <p style="font-size: 1.3rem; color: #ccc; letter-spacing: 3px; margin-bottom: 40px;">選擇遊玩模式</p>
+        
+        <div class="mode-cards-container">
+            <div class="mode-card pvp image-mode" onclick="selectMode('PVP')">
+                <img src="pvp_mode.png" alt="雙人同樂 PVP 模式" class="mode-card-img">
+            </div>
+            <div class="mode-card pve image-mode" onclick="selectMode('PVE')">
+                <img src="pve_mode.png" alt="劇情挑戰 PVE 模式" class="mode-card-img">
+            </div>
+        </div>
+    </div>
+
+    <div id="pve-character-select-screen" class="step-section" style="justify-content: center;">
+        <h2 style="font-size: 2.5rem; margin-bottom: 30px; text-shadow: 0 0 15px var(--pve-blue); color: #fff;">選擇挑戰對象</h2>
+        <div class="char-container">
+            <div class="char-card" onclick="selectNPC('xuchen')">
+                <div class="char-bg" style="background-image: url('pveboy.png');"></div>
+                <div class="char-info">
+                    <div class="char-name">黃旭辰</div>
+                    <div class="char-desc">「我愛詩紜，不管多苦我都會撐過去的。」</div>
+                </div>
+            </div>
+            <div class="char-card" onclick="selectNPC('shiyun')">
+                <div class="char-bg" style="background-image: url('pvegirl.png');"></div>
+                <div class="char-info">
+                    <div class="char-name">賴詩耘</div>
+                    <div class="char-desc">「他應該要體諒我的困擾，而不是整天只想著玩。」</div>
+                </div>
+            </div>
+        </div>
+        <button class="btn-main" style="width: auto; margin-top: 30px; background: rgba(0,0,0,0.6);" onclick="goToModeSelect()">返回上一頁</button>
+    </div>
+
+    <div id="pve-placeholder" class="step-section" style="justify-content: center;">
+        <h2 style="font-size: 2.5rem; margin-bottom: 20px; color: var(--pve-blue);">即將進入 PVE 劇情挑戰</h2>
+        <div class="instruction" style="background: rgba(0,0,0,0.8); border-color: var(--pve-blue);">
+            <p style="font-size: 1.3rem; margin: 10px 0;">你選擇了：<span id="chosen-npc-name" style="color:var(--gold); font-weight:bold; font-size:1.8rem;"></span></p>
+            <p style="color: #aaa; margin: 10px 0;">(後續的劇情與關卡邏輯，將在下一步設定！)</p>
+        </div>
+        <button class="btn-main" onclick="goToModeSelect()">返回首頁</button>
+    </div>
+
+    <div id="step-0" class="step-section" style="justify-content: center;">
         <h1 style="font-size: 3.5rem; color: #fff; text-shadow: 0 0 20px var(--primary); font-family: serif; margin-bottom: 10px;">愛之語</h1>
-        <p style="font-size: 1.3rem; color: #ccc; letter-spacing: 3px; margin-bottom: 30px;">3D 沉浸探索之旅</p>
+        <p style="font-size: 1.3rem; color: #ccc; letter-spacing: 3px; margin-bottom: 30px;">雙人同樂 PVP 模式</p>
         
         <div class="switches-container">
             <div class="toggle-wrapper">
@@ -355,6 +465,7 @@
         </div>
 
         <button class="btn-main" onclick="checkTutorialAndStart()">進入空間，開始遊戲</button>
+        <button class="btn-main" style="background: rgba(0,0,0,0.6); margin-top: 10px;" onclick="goToModeSelect()">返回模式選擇</button>
     </div>
 
     <div id="step-1" class="step-section">
@@ -427,6 +538,32 @@
 </div>
 
 <script>
+    // --- 🌟 遊戲模式切換邏輯 ---
+    let gameMode = 'PVP'; // 預設 PVP
+    let selectedNPC = null;
+
+    function goToModeSelect() {
+        document.querySelectorAll('.step-section').forEach(el => el.classList.remove('active'));
+        document.getElementById('mode-select-screen').classList.add('active');
+        document.getElementById('top-restart-btn').style.display = 'none';
+        document.getElementById('top-mascot-btn').style.display = 'none';
+        
+        // 重置精靈顯示
+        const mascot = document.getElementById('mascot-ui');
+        mascot.classList.remove('show');
+        mascot.style.display = 'none';
+    }
+
+    function selectMode(mode) {
+        if (mode === 'PVP') {
+            gameMode = 'PVP'; 
+            goToStep(0); 
+        } else {
+            // 點選 PVE 模式，直接跳轉到獨立的 PVE 網頁
+            window.location.href = 'https://trumpetken.github.io/love-language-cardgame-pve/';
+        }
+    }
+
     // --- 🌟 設定系統 (教學輪播與精靈開關) ---
     let carouselEnabled = true;
     let mascotEnabled = true;
