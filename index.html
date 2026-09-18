@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>愛之語雙人 3D 沉浸版 (終極完整版)</title>
+    <title>愛之語 4 人連線版｜Firebase</title>
     <style>
         :root {
             --primary: #ff85a1;
@@ -355,12 +355,138 @@
             #mascot-ui { bottom: 10px; right: 10px; }
         }
     </style>
+<style>
+    /* =========================================================
+       🔥 Firebase 4 人連線模式新增樣式
+       ========================================================= */
+    .network-panel {
+        width: min(92vw, 760px); background: rgba(10,10,28,.86);
+        border: 1px solid rgba(255,215,0,.45); border-radius: 20px;
+        padding: 26px; box-sizing: border-box; pointer-events: auto;
+        backdrop-filter: blur(12px); box-shadow: 0 18px 50px rgba(0,0,0,.55), inset 0 0 25px rgba(255,215,0,.04);
+    }
+    .network-title { font-size: 1.7rem; color: var(--gold); font-weight: 800; text-align:center; margin-bottom: 10px; }
+    .network-subtitle { color:#bbb; text-align:center; line-height:1.7; margin-bottom:20px; }
+    .network-form { display:grid; gap:14px; }
+    .network-input {
+        width:100%; box-sizing:border-box; padding:14px 16px; border-radius:12px;
+        border:1px solid rgba(255,255,255,.25); background:rgba(0,0,0,.45);
+        color:white; font-size:1.1rem; outline:none; font-family:inherit;
+    }
+    .network-input:focus { border-color:var(--gold); box-shadow:0 0 15px rgba(255,215,0,.15); }
+    .network-actions { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:8px; }
+    .network-actions .btn-main { margin:0; min-width:180px; }
+    .room-code-box {
+        display:flex; align-items:center; justify-content:center; gap:12px;
+        background:rgba(255,255,255,.06); border:1px dashed rgba(255,215,0,.55);
+        border-radius:16px; padding:14px; margin:14px 0 20px;
+    }
+    .room-code-label { color:#aaa; font-size:.95rem; }
+    .room-code { color:var(--gold); font-size:2.1rem; font-weight:900; letter-spacing:8px; text-shadow:0 0 15px rgba(255,215,0,.45); }
+    .firebase-status { margin-top:14px; text-align:center; color:#aaa; font-size:.9rem; line-height:1.5; }
+    .firebase-status.ok { color:#7bed9f; }
+    .firebase-status.err { color:#ff6b81; }
+
+    .players-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin:16px 0 20px; }
+    .player-card {
+        min-height:86px; padding:14px; border-radius:15px; box-sizing:border-box;
+        background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.16);
+        display:flex; align-items:center; gap:12px; position:relative; overflow:hidden;
+    }
+    .player-card.me { border-color:var(--gold); box-shadow:inset 0 0 18px rgba(255,215,0,.08); }
+    .player-card.riddler { border-color:var(--thunder-color); }
+    .player-avatar {
+        width:46px; height:46px; border-radius:50%; flex:0 0 auto;
+        display:flex; align-items:center; justify-content:center; font-size:1.3rem; font-weight:900;
+        background:linear-gradient(135deg, rgba(255,133,161,.8), rgba(79,172,254,.7)); border:2px solid rgba(255,255,255,.7);
+    }
+    .player-info { min-width:0; flex:1; }
+    .player-name { font-size:1.1rem; font-weight:800; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+    .player-role { font-size:.85rem; color:#aaa; margin-top:4px; }
+    .online-dot { width:9px; height:9px; border-radius:50%; background:#57606f; position:absolute; right:10px; top:10px; }
+    .online-dot.on { background:#2ed573; box-shadow:0 0 8px #2ed573; }
+
+    .role-banner {
+        pointer-events:auto; margin-bottom:12px; padding:9px 18px; border-radius:999px;
+        background:rgba(0,0,0,.6); border:1px solid rgba(255,255,255,.22); font-weight:800; text-align:center;
+    }
+    .role-banner.riddler { color:var(--thunder-color); border-color:rgba(255,71,87,.6); }
+    .role-banner.guesser { color:var(--fav-color); border-color:rgba(46,213,115,.6); }
+    .phase-status { color:#aaa; font-size:.95rem; text-align:center; margin-top:8px; }
+
+    .wait-panel {
+        pointer-events:auto; width:min(90vw,650px); padding:30px; box-sizing:border-box;
+        background:rgba(0,0,0,.68); border:1px solid rgba(255,255,255,.18); border-radius:20px;
+        backdrop-filter:blur(10px); text-align:center; margin-top:8vh;
+    }
+    .wait-icon { font-size:4rem; margin-bottom:12px; animation:floatMascot 3s ease-in-out infinite; }
+    .wait-title { color:var(--gold); font-size:1.7rem; font-weight:900; margin-bottom:10px; }
+    .wait-text { color:#ddd; font-size:1.08rem; line-height:1.8; }
+    .progress-pills { display:flex; justify-content:center; gap:10px; flex-wrap:wrap; margin-top:20px; }
+    .progress-pill { padding:8px 12px; border-radius:999px; background:rgba(255,255,255,.08); color:#bbb; border:1px solid rgba(255,255,255,.12); }
+    .progress-pill.done { color:#7bed9f; border-color:rgba(46,213,115,.55); }
+
+    .shared-choice-note { color:#aaa; font-size:.92rem; text-align:center; margin:-6px 0 10px; pointer-events:auto; }
+    .card.readonly { cursor:default; }
+    .card.readonly .refresh-btn { display:none; }
+
+    .online-result-wrap {
+        width:min(94vw,980px); pointer-events:auto; overflow-y:auto; padding-bottom:50px;
+        max-height:calc(100vh - 115px); scrollbar-width:thin;
+    }
+    .truth-panel, .guess-result-panel {
+        background:rgba(0,0,0,.68); border:1px solid rgba(255,255,255,.16); border-radius:18px;
+        padding:16px; margin-bottom:14px; backdrop-filter:blur(8px);
+    }
+    .truth-panel { border-color:rgba(255,71,87,.55); }
+    .guess-result-panel { border-color:rgba(46,213,115,.30); }
+    .result-head { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:12px; }
+    .result-name { font-size:1.15rem; font-weight:900; }
+    .score-hearts { font-size:1.05rem; letter-spacing:2px; text-align:right; }
+    .result-row { display:grid; grid-template-columns:120px 1fr; gap:12px; align-items:center; margin-top:8px; }
+    .result-label { font-weight:800; color:#ccc; text-align:right; }
+    .mini-card-line { display:flex; gap:10px; flex-wrap:wrap; }
+    .mini-static-card {
+        width:82px; height:126px; position:relative; border-radius:10px; overflow:hidden;
+        border:2px solid #555; box-shadow:0 4px 12px rgba(0,0,0,.45); background:#222;
+        transform:rotateY(90deg); opacity:0; transition:transform .55s ease, opacity .55s ease;
+    }
+    .mini-static-card.reveal { transform:rotateY(0); opacity:1; }
+    .mini-static-card.match-fav { border-color:var(--fav-color); box-shadow:0 0 18px rgba(46,213,115,.5); }
+    .mini-static-card.match-thunder { border-color:var(--thunder-color); box-shadow:0 0 18px rgba(255,71,87,.55); }
+    .mini-static-card img { width:100%; height:100%; object-fit:cover; opacity:.66; }
+    .mini-static-label { position:absolute; left:0; right:0; bottom:0; padding:5px 3px; background:rgba(0,0,0,.78); color:#fff; font-size:.72rem; font-weight:800; text-align:center; }
+
+    .copy-btn { border:1px solid var(--gold); background:transparent; color:var(--gold); border-radius:999px; padding:8px 12px; cursor:pointer; font-weight:800; }
+    .copy-btn:hover { background:var(--gold); color:#111; }
+    .small-btn { padding:10px 18px !important; font-size:1rem !important; margin:0 !important; }
+    .danger-btn { border-color:#ff4757 !important; }
+
+    #toast {
+        position:fixed; left:50%; bottom:28px; transform:translate(-50%,30px); opacity:0;
+        background:rgba(20,20,30,.95); color:#fff; border:1px solid rgba(255,215,0,.55);
+        padding:12px 18px; border-radius:999px; z-index:20000; pointer-events:none;
+        transition:.25s; box-shadow:0 8px 25px rgba(0,0,0,.5); font-weight:700;
+    }
+    #toast.show { opacity:1; transform:translate(-50%,0); }
+
+    @media (max-width:768px) {
+        .network-panel { padding:20px 15px; }
+        .players-grid { grid-template-columns:1fr; }
+        .room-code { font-size:1.65rem; letter-spacing:5px; }
+        .result-row { grid-template-columns:1fr; }
+        .result-label { text-align:left; }
+        .mini-static-card { width:70px; height:108px; }
+        .online-result-wrap { max-height:calc(100vh - 95px); }
+        .wait-panel { margin-top:5vh; padding:24px 18px; }
+    }
+</style>
+
 </head>
 <body>
 
-<button id="top-mascot-btn" class="btn-main" style="position: fixed; top: 15px; left: 20px; z-index: 9999; display: none; padding: 10px 20px; margin: 0; font-size: 1rem; width: auto;" onclick="toggleFloatingMascot()">✨ 隱藏精靈</button>
-
-<button id="top-restart-btn" class="btn-main" style="position: fixed; top: 15px; right: 20px; z-index: 9999; display: none; padding: 10px 20px; margin: 0; font-size: 1rem; width: auto;" onclick="goToModeSelect()">🔄 回首頁</button>
+<button id="top-room-btn" class="btn-main" style="position:fixed;top:15px;left:20px;z-index:9999;display:none;padding:9px 15px;margin:0;font-size:.9rem;width:auto;" onclick="copyRoomCode()">🏠 房間 <span id="top-room-code"></span></button>
+<button id="top-leave-btn" class="btn-main danger-btn" style="position:fixed;top:15px;right:20px;z-index:9999;display:none;padding:9px 15px;margin:0;font-size:.9rem;width:auto;background:rgba(0,0,0,.65);" onclick="leaveRoom()">🚪 離開房間</button>
 
 <div id="room-env"><div class="floor"></div><div class="center-glow"></div></div>
 
@@ -368,647 +494,819 @@
     <div class="tutorial-content">
         <button class="nav-btn prev-btn" onclick="changeSlide(-1)">&#10094;</button>
         <button class="nav-btn next-btn" onclick="changeSlide(1)">&#10095;</button>
-        
         <div class="slide active">
             <img src="guide1.png" alt="遊戲說明 1">
-            <p>這是一款雙人互動遊戲。遊戲開始時，先決定由誰擔任本輪的 <span style="color:var(--thunder-color);">「謎語人」</span> 與 <span style="color:var(--fav-color);">「解謎者」</span>，並請兩人共同選擇一張情境卡閱讀。</p>
+            <p>這是 4 人手機連線模式。由房主建立房間並成為第一輪 <span style="color:var(--thunder-color);">「謎語人」</span>，其餘 3 人是 <span style="color:var(--fav-color);">「猜謎者」</span>。</p>
         </div>
         <div class="slide">
             <img src="guide2.png" alt="遊戲說明 2">
-            <p>接著 <span style="color:var(--thunder-color);">「謎語人」</span> 選出在此情境中 2 張最『喜歡』的愛之語，以及 1 張最『不喜歡』的愛之語。<br><span style="color:#aaa; font-size: 1rem;">(注意別讓 <span style="color:var(--fav-color);">「解謎者」</span> 偷看喔！)</span></p>
+            <p><span style="color:var(--thunder-color);">謎語人</span> 先選出此情境中 2 張最喜歡、1 張最不喜歡的愛之語。其他玩家的手機只會顯示等待畫面，不會顯示答案。</p>
         </div>
         <div class="slide">
             <img src="guide3.png" alt="遊戲說明 3">
-            <p><span style="color:var(--thunder-color);">「謎語人」</span> 選完後，請 <span style="color:var(--fav-color);">「解謎者」</span> 點選一張『天使卡』，請 <span style="color:var(--thunder-color);">「謎語人」</span> 回答卡片上的問題，以獲取猜題線索。</p>
+            <p>系統指定一位猜謎者抽取共享的「天使卡」，請謎語人口頭回答。所有玩家會同步看到同一張天使卡。</p>
         </div>
         <div class="slide">
             <img src="guide4.png" alt="遊戲說明 4">
-            <p>聽完線索後，<span style="color:var(--fav-color);">「解謎者」</span> 選出在此情境中 <span style="color:var(--thunder-color);">「謎語人」</span> 可能的最喜歡的愛之語 2 張，以及最不喜歡的愛之語 1 張。</p>
+            <p>3 位猜謎者會在自己的手機上同時猜 2 張喜歡＋1 張雷點。三人全部送出後，謎語人按下揭曉，大家同步查看默契結果。</p>
         </div>
-
         <div class="dots-container">
             <span class="dot active" onclick="setSlide(0)"></span>
             <span class="dot" onclick="setSlide(1)"></span>
             <span class="dot" onclick="setSlide(2)"></span>
             <span class="dot" onclick="setSlide(3)"></span>
         </div>
-        
-        <button id="btn-start-game" class="btn-main" style="display:none; margin: 20px auto 0 auto;" onclick="closeTutorialAndStart()">我了解了，開始遊戲</button>
+        <button id="btn-close-tutorial" class="btn-main" style="display:none;margin:20px auto 0" onclick="closeTutorial()">我了解了</button>
     </div>
 </div>
 
 <div class="app-container">
-    
-    <div id="mode-select-screen" class="step-section active" style="justify-content: center;">
-        <h1 style="font-size: 3.5rem; color: #fff; text-shadow: 0 0 20px var(--primary); font-family: serif; margin-bottom: 20px;">愛之語</h1>
-        <p style="font-size: 1.3rem; color: #ccc; letter-spacing: 3px; margin-bottom: 40px;">選擇遊玩模式</p>
-        
+    <div id="mode-select-screen" class="step-section active" style="justify-content:center;">
+        <h1 style="font-size:3.5rem;color:#fff;text-shadow:0 0 20px var(--primary);font-family:serif;margin-bottom:20px;">愛之語</h1>
+        <p style="font-size:1.3rem;color:#ccc;letter-spacing:3px;margin-bottom:40px;">選擇遊玩模式</p>
         <div class="mode-cards-container">
             <div class="mode-card pvp image-mode" onclick="selectMode('PVP')">
-                <img src="pvp_mode.png" alt="雙人同樂 PVP 模式" class="mode-card-img">
+                <img src="pvp_mode.png" alt="4 人手機連線 PVP 模式" class="mode-card-img">
             </div>
             <div class="mode-card pve image-mode" onclick="selectMode('PVE')">
                 <img src="pve_mode.png" alt="劇情挑戰 PVE 模式" class="mode-card-img">
             </div>
         </div>
+        <div style="margin-top:18px;color:#aaa;font-size:.95rem;pointer-events:auto;">PVP 已改為 Firebase 4 人手機連線模式</div>
     </div>
 
-    <div id="pve-character-select-screen" class="step-section" style="justify-content: center;">
-        <h2 style="font-size: 2.5rem; margin-bottom: 30px; text-shadow: 0 0 15px var(--pve-blue); color: #fff;">選擇挑戰對象</h2>
-        <div class="char-container">
-            <div class="char-card" onclick="selectNPC('xuchen')">
-                <div class="char-bg" style="background-image: url('pveboy.png');"></div>
-                <div class="char-info">
-                    <div class="char-name">黃旭辰</div>
-                    <div class="char-desc">「我愛詩紜，不管多苦我都會撐過去的。」</div>
-                </div>
+    <div id="network-entry-screen" class="step-section" style="justify-content:center;overflow-y:auto;">
+        <div class="network-panel">
+            <div class="network-title">📱 4 人手機連線</div>
+            <div class="network-subtitle">1 位謎語人＋3 位猜謎者。四支手機開啟同一個 GitHub Pages 網址即可加入同一房間。</div>
+            <div class="network-form">
+                <input id="player-name-input" class="network-input" maxlength="12" placeholder="輸入你的暱稱（最多 12 字）" autocomplete="off">
+                <input id="room-code-input" class="network-input" maxlength="6" inputmode="numeric" placeholder="加入房間時輸入 6 位房號" autocomplete="off">
             </div>
-            <div class="char-card" onclick="selectNPC('shiyun')">
-                <div class="char-bg" style="background-image: url('pvegirl.png');"></div>
-                <div class="char-info">
-                    <div class="char-name">賴詩耘</div>
-                    <div class="char-desc">「他應該要體諒我的困擾，而不是整天只想著玩。」</div>
-                </div>
+            <div class="network-actions">
+                <button class="btn-main" onclick="createRoom()">✨ 建立房間</button>
+                <button class="btn-main" onclick="joinRoom()">🔗 加入房間</button>
             </div>
+            <div class="network-actions" style="margin-top:14px;">
+                <button class="btn-main small-btn" style="background:rgba(0,0,0,.5);" onclick="openTutorial()">📖 遊戲規則</button>
+                <button class="btn-main small-btn" style="background:rgba(0,0,0,.5);" onclick="goToModeSelect()">返回模式選擇</button>
+            </div>
+            <div id="firebase-status" class="firebase-status">Firebase 初始化中…</div>
         </div>
-        <button class="btn-main" style="width: auto; margin-top: 30px; background: rgba(0,0,0,0.6);" onclick="goToModeSelect()">返回上一頁</button>
     </div>
 
-    <div id="pve-placeholder" class="step-section" style="justify-content: center;">
-        <h2 style="font-size: 2.5rem; margin-bottom: 20px; color: var(--pve-blue);">即將進入 PVE 劇情挑戰</h2>
-        <div class="instruction" style="background: rgba(0,0,0,0.8); border-color: var(--pve-blue);">
-            <p style="font-size: 1.3rem; margin: 10px 0;">你選擇了：<span id="chosen-npc-name" style="color:var(--gold); font-weight:bold; font-size:1.8rem;"></span></p>
-            <p style="color: #aaa; margin: 10px 0;">(後續的劇情與關卡邏輯，將在下一步設定！)</p>
-        </div>
-        <button class="btn-main" onclick="goToModeSelect()">返回首頁</button>
-    </div>
-
-    <div id="step-0" class="step-section" style="justify-content: center;">
-        <h1 style="font-size: 3.5rem; color: #fff; text-shadow: 0 0 20px var(--primary); font-family: serif; margin-bottom: 10px;">愛之語</h1>
-        <p style="font-size: 1.3rem; color: #ccc; letter-spacing: 3px; margin-bottom: 30px;">雙人同樂 PVP 模式</p>
-        
-        <div class="switches-container">
-            <div class="toggle-wrapper">
-                <span style="color: white; font-size: 1.1rem; font-weight: bold;">開啟圖文教學</span>
-                <label class="switch">
-                    <input type="checkbox" id="carousel-toggle" checked onchange="toggleSettings()">
-                    <span class="slider"></span>
-                </label>
+    <div id="lobby-screen" class="step-section" style="justify-content:center;overflow-y:auto;">
+        <div class="network-panel">
+            <div class="network-title">等待玩家加入</div>
+            <div class="room-code-box">
+                <div><div class="room-code-label">房間代碼</div><div id="lobby-room-code" class="room-code">------</div></div>
+                <button class="copy-btn" onclick="copyRoomCode()">複製</button>
             </div>
-            <div class="toggle-wrapper">
-                <span style="color: white; font-size: 1.1rem; font-weight: bold;">開啟精靈提示</span>
-                <label class="switch">
-                    <input type="checkbox" id="mascot-toggle" checked onchange="toggleSettings()">
-                    <span class="slider"></span>
-                </label>
-            </div>
-        </div>
-
-        <button class="btn-main" onclick="checkTutorialAndStart()">進入空間，開始遊戲</button>
-        <button class="btn-main" style="background: rgba(0,0,0,0.6); margin-top: 10px;" onclick="goToModeSelect()">返回模式選擇</button>
-    </div>
-
-    <div id="step-1" class="step-section">
-        <h2>選擇情境</h2><div class="instruction">左右滑動牌卡查看，可點擊上方 🔄 重新抽牌。</div>
-        <div class="cards-stage" id="stage-1"></div><button id="btn-confirm-1" class="btn-main" onclick="goToStep(2)">看完情境了，進入下一步</button>
-    </div>
-
-    <div id="step-2" class="step-section">
-        <h2><span style="color:var(--thunder-color);">謎語人</span> 的喜好</h2><div class="instruction" id="inst-2" style="color: var(--fav-color);">請選擇 2 種你最「喜歡」的愛之語 (0/2)</div>
-        <div class="cards-stage" id="stage-2"></div><button id="btn-confirm-2" class="btn-main" disabled onclick="goToStep(3)">確定選擇</button>
-    </div>
-
-    <div id="step-3" class="step-section">
-        <h2><span style="color:var(--thunder-color);">謎語人</span> 的雷點</h2><div class="instruction" id="inst-3" style="color: var(--thunder-color);">請選擇 1 種你最「不喜歡」的雷點 (0/1)</div>
-        <div class="cards-stage" id="stage-3"></div><button id="btn-confirm-3" class="btn-main" disabled onclick="goToStep(4)">確定選擇，換人</button>
-    </div>
-
-    <div id="step-4" class="step-section">
-        <h2>天使卡提示</h2><div class="instruction" style="color: var(--gold);"><span style="color:var(--fav-color);">解謎者</span> 請接手！抽取一張天使卡請 <span style="color:var(--thunder-color);">謎語人</span> 回答</div>
-        <div class="cards-stage" id="stage-4"></div><button id="btn-confirm-4" class="btn-main" onclick="goToStep(5)">聽完分享了，開始猜測</button>
-    </div>
-
-    <div id="step-5" class="step-section">
-        <h2><span style="color:var(--fav-color);">解謎者</span> 猜測喜好</h2><div class="instruction" id="inst-5" style="color: var(--fav-color);">請猜測 <span style="color:var(--thunder-color);">謎語人</span> 最「喜歡」的 2 種愛之語 (0/2)</div>
-        <div class="cards-stage" id="stage-5"></div><button id="btn-confirm-5" class="btn-main" disabled onclick="goToStep(6)">確定猜測</button>
-    </div>
-
-    <div id="step-6" class="step-section">
-        <h2><span style="color:var(--fav-color);">解謎者</span> 猜測雷點</h2><div class="instruction" id="inst-6" style="color: var(--thunder-color);">請猜測 <span style="color:var(--thunder-color);">謎語人</span> 最「不喜歡」的 1 種雷點 (0/1)</div>
-        <div class="cards-stage" id="stage-6"></div><button id="btn-confirm-6" class="btn-main" disabled onclick="goToStep(7)">確定猜測，揭曉結果！</button>
-    </div>
-
-    <div id="step-7" class="step-section" style="justify-content: flex-start; padding-top:20px;">
-        <h2 style="font-size: 2.2rem; margin-bottom: 5px;">結算報告</h2>
-        <div style="font-size: 1.5rem; font-weight: bold; color: var(--fav-color); margin-bottom: 10px;">
-            默契愛心：<span id="hearts-display" style="letter-spacing: 5px; min-width: 50px; display: inline-block;"></span>
-        </div>
-        
-        <div class="result-container">
-            <div style="display:flex; width: 100%; border-bottom: 1px solid rgba(255,215,0,0.3); padding-bottom:10px; margin-bottom: 15px;">
-                <h3 style="flex:1; color: var(--gold); margin:0; text-align: center; font-size:1.1rem;">👑 <span style="color:var(--thunder-color);">謎語人</span> 的真實心聲</h3>
-                <h3 style="flex:1; color: var(--gold); margin:0; text-align: center; font-size:1.1rem;">🕵️ <span style="color:var(--fav-color);">解謎者</span> 的猜測</h3>
-            </div>
-            <div style="text-align:center; color: var(--fav-color); font-weight:bold; margin-bottom:5px; font-size:1.1rem;">❤️ 喜歡的愛之語區</div>
-            <div class="res-section">
-                <div class="res-group" id="res-a-fav"></div>
-                <div class="res-group" id="res-b-fav"></div>
-            </div>
-            <div style="text-align:center; color: var(--thunder-color); font-weight:bold; margin-bottom:5px; font-size:1.1rem;">⚡ 雷點愛之語區</div>
-            <div class="res-section">
-                <div class="res-group" id="res-a-thunder"></div>
-                <div class="res-group" id="res-b-thunder"></div>
+            <div id="lobby-role-note" class="network-subtitle" style="margin-bottom:8px;"></div>
+            <div id="players-grid" class="players-grid"></div>
+            <div id="lobby-count" class="phase-status">0 / 4</div>
+            <div class="network-actions" style="margin-top:18px;">
+                <button id="start-game-btn" class="btn-main" disabled onclick="startOnlineGame()">4 人到齊後開始</button>
+                <button class="btn-main small-btn" style="background:rgba(0,0,0,.5);" onclick="openTutorial()">📖 規則</button>
             </div>
         </div>
     </div>
 
-    <div id="mascot-ui">
-        <div class="speech-bubble">
-            <div class="close-mascot-btn" onclick="closeMascot(event)" title="暫時隱藏精靈">✖</div>
-            <div id="mascot-text"></div>
-        </div>
-        <img src="spirit.png" class="mascot-img" alt="日記精靈">
+    <div id="scenario-screen" class="step-section">
+        <div id="scenario-role" class="role-banner"></div>
+        <h2>選擇情境</h2>
+        <div id="scenario-inst" class="instruction">由謎語人選擇本輪情境。</div>
+        <div class="shared-choice-note">所有玩家的手機都會同步看到相同的 3 張情境卡。</div>
+        <div class="cards-stage" id="stage-scenario"></div>
+        <button id="scenario-confirm-btn" class="btn-main" style="display:none;" disabled onclick="confirmScenario()">看完情境了，進入下一步</button>
     </div>
 
+    <div id="riddle-fav-screen" class="step-section">
+        <div class="role-banner riddler">👑 你是謎語人</div>
+        <h2><span style="color:var(--thunder-color);">謎語人</span> 的喜好</h2>
+        <div class="instruction" id="inst-riddle-fav" style="color:var(--fav-color);">請選擇 2 種你最「喜歡」的愛之語 (0/2)</div>
+        <div class="cards-stage" id="stage-riddle-fav"></div>
+        <button id="btn-riddle-fav" class="btn-main" disabled onclick="confirmRiddleFav()">確定選擇</button>
+    </div>
+
+    <div id="riddle-thunder-screen" class="step-section">
+        <div class="role-banner riddler">👑 你是謎語人</div>
+        <h2><span style="color:var(--thunder-color);">謎語人</span> 的雷點</h2>
+        <div class="instruction" id="inst-riddle-thunder" style="color:var(--thunder-color);">請選擇 1 種你最「不喜歡」的愛之語 (0/1)</div>
+        <div class="cards-stage" id="stage-riddle-thunder"></div>
+        <button id="btn-riddle-thunder" class="btn-main" disabled onclick="confirmRiddleThunder()">確定選擇</button>
+    </div>
+
+    <div id="angel-screen" class="step-section">
+        <div id="angel-role" class="role-banner"></div>
+        <h2>天使卡提示</h2>
+        <div id="angel-inst" class="instruction" style="color:var(--gold);">等待指定猜謎者抽取一張天使卡。</div>
+        <div class="cards-stage" id="stage-angel"></div>
+        <button id="angel-answer-btn" class="btn-main" style="display:none;" disabled onclick="startGuessingPhase()">我回答完了，開始猜測</button>
+    </div>
+
+    <div id="guess-fav-screen" class="step-section">
+        <div class="role-banner guesser">🕵️ 你是猜謎者</div>
+        <h2><span style="color:var(--fav-color);">猜謎者</span> 猜測喜好</h2>
+        <div class="instruction" id="inst-guess-fav" style="color:var(--fav-color);">請猜謎語人最「喜歡」的 2 種愛之語 (0/2)</div>
+        <div class="cards-stage" id="stage-guess-fav"></div>
+        <button id="btn-guess-fav" class="btn-main" disabled onclick="goToGuessThunder()">確定猜測</button>
+    </div>
+
+    <div id="guess-thunder-screen" class="step-section">
+        <div class="role-banner guesser">🕵️ 你是猜謎者</div>
+        <h2><span style="color:var(--fav-color);">猜謎者</span> 猜測雷點</h2>
+        <div class="instruction" id="inst-guess-thunder" style="color:var(--thunder-color);">請猜謎語人最「不喜歡」的 1 種愛之語 (0/1)</div>
+        <div class="cards-stage" id="stage-guess-thunder"></div>
+        <button id="btn-guess-thunder" class="btn-main" disabled onclick="submitGuess()">送出答案</button>
+    </div>
+
+    <div id="wait-screen" class="step-section">
+        <div class="wait-panel">
+            <div id="wait-icon" class="wait-icon">✨</div>
+            <div id="wait-title" class="wait-title">等待中</div>
+            <div id="wait-text" class="wait-text"></div>
+            <div id="wait-progress" class="progress-pills"></div>
+            <button id="reveal-btn" class="btn-main" style="display:none;margin:24px auto 0;" onclick="revealResults()">💞 三人都完成了，揭曉結果</button>
+        </div>
+    </div>
+
+    <div id="result-screen" class="step-section" style="justify-content:flex-start;padding-top:18px;">
+        <h2 style="font-size:2.1rem;margin-bottom:8px;">4 人默契結算</h2>
+        <div id="result-round-note" class="phase-status" style="margin-bottom:10px;"></div>
+        <div id="online-results" class="online-result-wrap"></div>
+        <button id="next-round-btn" class="btn-main" style="display:none;margin:0 0 40px;" onclick="startNextRound()">🔄 下一局，換下一位當謎語人</button>
+    </div>
 </div>
 
 <div id="image-modal" class="image-modal" onclick="closeModal()">
     <img id="modal-image" src="" alt="放大圖片">
     <div class="close-text">點擊任意處關閉 ✖</div>
 </div>
+<div id="toast"></div>
+
+<!-- Firebase 12.19.0 compat：適合目前這種單一 HTML + inline onclick 的 GitHub Pages 結構 -->
+<script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.19.0/firebase-database-compat.js"></script>
 
 <script>
-    // --- 🌟 遊戲模式切換邏輯 ---
-    let gameMode = 'PVP'; // 預設 PVP
-    let selectedNPC = null;
+/* =============================================================
+   🔥 只需要修改這一區：貼上 Firebase 專案的 Web App config
+   -------------------------------------------------------------
+   1. Firebase Console → Project settings → Your apps → Web app
+   2. 複製 firebaseConfig
+   3. 請務必包含 databaseURL
+   4. Authentication → Sign-in method → 開啟 Anonymous
+   5. Realtime Database → Rules 使用文末提供的規則
+   ============================================================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyCCY6f_W4I0RsSEHUf8OL30aimJSb5dups",
+  authDomain: "lovelanguage-multi.firebaseapp.com",
+  projectId: "lovelanguage-multi",
+  storageBucket: "lovelanguage-multi.firebasestorage.app",
+  messagingSenderId: "237472195330",
+  appId: "1:237472195330:web:f7028767c4dbcdf93b581b",
+  measurementId: "G-RCSQ7K719V"
+};
 
-    function goToModeSelect() {
-        document.querySelectorAll('.step-section').forEach(el => el.classList.remove('active'));
-        document.getElementById('mode-select-screen').classList.add('active');
-        document.getElementById('top-restart-btn').style.display = 'none';
-        document.getElementById('top-mascot-btn').style.display = 'none';
-        
-        // 重置精靈顯示
-        const mascot = document.getElementById('mascot-ui');
-        mascot.classList.remove('show');
-        mascot.style.display = 'none';
+const PLAYER_LIMIT = 4;
+const loveLanguages = [
+    { id:'c1', image:'words.jpg',   label:'肯定的言詞' },
+    { id:'c2', image:'gift.jpg',    label:'真心的禮物' },
+    { id:'c3', image:'service.jpg', label:'服務的行動' },
+    { id:'c4', image:'time.jpg',    label:'精心的時刻' },
+    { id:'c5', image:'touch.jpg',   label:'身體的接觸' }
+];
+const allScenarios = ['s1.jpg','s2.jpg','s3.jpg','s4.jpg','s5.jpg','s6.jpg'];
+const angelCards = ['angel1.jpg','angel2.jpg','angel3.jpg','angel4.jpg','angel5.jpg','angel6.jpg'];
+const flat3 = [{tx:-240,ry:0,tz:0},{tx:0,ry:0,tz:0},{tx:240,ry:0,tz:0}];
+const flat5 = [{tx:-420,ry:0,tz:0},{tx:-210,ry:0,tz:0},{tx:0,ry:0,tz:0},{tx:210,ry:0,tz:0},{tx:420,ry:0,tz:0}];
+
+let db = null;
+let auth = null;
+let currentUid = null;
+let currentRoomCode = null;
+let currentRoom = null;
+let roomListenerRef = null;
+let connectedRef = null;
+let firebaseReady = false;
+let currentSlide = 0;
+let lastRenderedPhase = null;
+let tempSelection = [];
+let guessDraftFav = [];
+let guessDraftThunder = [];
+let localGuessStep = 'fav';
+let toastTimer = null;
+
+function isFirebaseConfigReady() {
+    return firebaseConfig.apiKey && !firebaseConfig.apiKey.includes('YOUR_') &&
+           firebaseConfig.databaseURL && !firebaseConfig.databaseURL.includes('YOUR_');
+}
+
+async function initFirebase() {
+    const status = document.getElementById('firebase-status');
+    if (!isFirebaseConfigReady()) {
+        status.className = 'firebase-status err';
+        status.innerHTML = '⚠️ 尚未貼上 Firebase config。請先修改 HTML 最下方的 <b>firebaseConfig</b>。';
+        return;
     }
-
-    function selectMode(mode) {
-        if (mode === 'PVP') {
-            gameMode = 'PVP'; 
-            goToStep(0); 
-        } else {
-            // 點選 PVE 模式，直接跳轉到獨立的 PVE 網頁
-            window.location.href = 'https://trumpetken.github.io/love-language-cardgame-pve/';
-        }
+    try {
+        firebase.initializeApp(firebaseConfig);
+        auth = firebase.auth();
+        db = firebase.database();
+        await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+        if (!auth.currentUser) await auth.signInAnonymously();
+        currentUid = auth.currentUser.uid;
+        firebaseReady = true;
+        status.className = 'firebase-status ok';
+        status.textContent = '● Firebase 已連線，可建立或加入房間';
+        await tryRestoreSession();
+    } catch (err) {
+        console.error(err);
+        status.className = 'firebase-status err';
+        status.textContent = 'Firebase 連線失敗：' + friendlyFirebaseError(err);
     }
+}
 
-    // --- 🌟 設定系統 (教學輪播與精靈開關) ---
-    let carouselEnabled = true;
-    let mascotEnabled = true;
-    let currentSlide = 0;
-    let currentStepNum = 0;
+function friendlyFirebaseError(err) {
+    const code = err && err.code ? err.code : '';
+    if (code.includes('auth/operation-not-allowed')) return '請先在 Authentication 開啟 Anonymous 匿名登入。';
+    if (code.includes('permission-denied')) return 'Realtime Database Rules 阻擋了讀寫，請檢查規則。';
+    return (err && err.message) ? err.message : '未知錯誤';
+}
 
-    window.addEventListener('DOMContentLoaded', () => {
-        const savedCarousel = localStorage.getItem('loveLangCarousel');
-        if (savedCarousel !== null) {
-            carouselEnabled = savedCarousel === 'true';
-            document.getElementById('carousel-toggle').checked = carouselEnabled;
-        }
-        const savedMascot = localStorage.getItem('loveLangMascot');
-        if (savedMascot !== null) {
-            mascotEnabled = savedMascot === 'true';
-            document.getElementById('mascot-toggle').checked = mascotEnabled;
-        }
-        updateMascotBtnText();
-    });
+function selectMode(mode) {
+    if (mode === 'PVP') showScreen('network-entry-screen');
+    else window.location.href = 'https://trumpetken.github.io/love-language-cardgame-pve/';
+}
 
-    function toggleSettings() {
-        carouselEnabled = document.getElementById('carousel-toggle').checked;
-        localStorage.setItem('loveLangCarousel', carouselEnabled);
+function goToModeSelect() {
+    showScreen('mode-select-screen');
+}
 
-        mascotEnabled = document.getElementById('mascot-toggle').checked;
-        localStorage.setItem('loveLangMascot', mascotEnabled);
-        
-        updateMascotBtnText();
-        updateMascot(currentStepNum);
+function showScreen(id) {
+    document.querySelectorAll('.step-section').forEach(el => el.classList.remove('active'));
+    const target = document.getElementById(id);
+    if (target) target.classList.add('active');
+}
+
+function openTutorial() {
+    document.getElementById('tutorial-modal').style.display = 'flex';
+    setSlide(0);
+}
+function closeTutorial() { document.getElementById('tutorial-modal').style.display = 'none'; }
+function changeSlide(direction) {
+    const slides = document.querySelectorAll('.slide');
+    const next = currentSlide + direction;
+    if (next >= 0 && next < slides.length) setSlide(next);
+}
+function setSlide(index) {
+    const slides = document.querySelectorAll('.slide');
+    const dots = document.querySelectorAll('.dot');
+    slides.forEach(x => x.classList.remove('active'));
+    dots.forEach(x => x.classList.remove('active'));
+    currentSlide = index;
+    slides[index].classList.add('active');
+    dots[index].classList.add('active');
+    document.querySelector('.prev-btn').style.display = index === 0 ? 'none' : 'block';
+    document.querySelector('.next-btn').style.display = index === slides.length - 1 ? 'none' : 'block';
+    document.getElementById('btn-close-tutorial').style.display = index === slides.length - 1 ? 'block' : 'none';
+}
+
+function sanitizeName(name) {
+    return String(name || '').trim().replace(/[<>]/g,'').slice(0,12);
+}
+function normalizeRoomCode(code) { return String(code || '').replace(/\D/g,'').slice(0,6); }
+function escapeHtml(str) {
+    return String(str ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+}
+function shuffle(arr) {
+    const a = [...arr];
+    for (let i=a.length-1;i>0;i--) {
+        const j = Math.floor(Math.random()*(i+1));
+        [a[i],a[j]]=[a[j],a[i]];
     }
+    return a;
+}
+function getPlayersArray(room=currentRoom) {
+    if (!room || !room.players) return [];
+    return Object.entries(room.players).map(([uid,p]) => ({uid,...p})).sort((a,b)=>(a.joinedAt||0)-(b.joinedAt||0));
+}
+function getPlayer(uid) { return currentRoom && currentRoom.players ? currentRoom.players[uid] : null; }
+function isRiddler() { return !!currentRoom && currentRoom.riddlerUid === currentUid; }
+function isHost() { return !!currentRoom && currentRoom.hostUid === currentUid; }
+function isAngelPicker() { return !!currentRoom && currentRoom.angelPickerUid === currentUid; }
+function getRiddlerName() { return getPlayer(currentRoom?.riddlerUid)?.name || '謎語人'; }
+function getAngelPickerName() { return getPlayer(currentRoom?.angelPickerUid)?.name || '指定猜謎者'; }
+function serverTimestamp() { return firebase.database.ServerValue.TIMESTAMP; }
 
-    function checkTutorialAndStart() {
-        if (carouselEnabled) {
-            document.getElementById('tutorial-modal').style.display = 'flex';
-            setSlide(0);
-        } else {
-            goToStep(1);
-        }
+async function ensureFirebase() {
+    if (!firebaseReady || !db || !currentUid) {
+        showToast('Firebase 尚未完成設定或連線');
+        return false;
     }
+    return true;
+}
 
-    function closeTutorialAndStart() {
-        document.getElementById('tutorial-modal').style.display = 'none';
-        document.getElementById('carousel-toggle').checked = false;
-        toggleSettings(); 
-        goToStep(1);
+async function generateUniqueRoomCode() {
+    for (let i=0;i<12;i++) {
+        const code = String(Math.floor(100000 + Math.random()*900000));
+        const snap = await db.ref('rooms/'+code).once('value');
+        if (!snap.exists()) return code;
     }
+    throw new Error('暫時無法產生房號，請再試一次');
+}
 
-    function changeSlide(direction) {
-        let slides = document.querySelectorAll('.slide');
-        let newSlide = currentSlide + direction;
-        if (newSlide >= 0 && newSlide < slides.length) setSlide(newSlide);
-    }
-
-    function setSlide(index) {
-        let slides = document.querySelectorAll('.slide');
-        let dots = document.querySelectorAll('.dot');
-        
-        slides.forEach(s => s.classList.remove('active'));
-        dots.forEach(d => d.classList.remove('active'));
-        
-        currentSlide = index;
-        slides[currentSlide].classList.add('active');
-        dots[currentSlide].classList.add('active');
-
-        if (currentSlide === slides.length - 1) {
-            document.getElementById('btn-start-game').style.display = 'block';
-            document.querySelector('.next-btn').style.display = 'none';
-        } else {
-            document.getElementById('btn-start-game').style.display = 'none';
-            document.querySelector('.next-btn').style.display = 'block';
-        }
-        
-        document.querySelector('.prev-btn').style.display = (currentSlide === 0) ? 'none' : 'block';
-    }
-
-    // --- 精靈常駐左上角開關與手動隱藏邏輯 ---
-    function updateMascotBtnText() {
-        let btn = document.getElementById('top-mascot-btn');
-        if(btn) {
-            if (mascotEnabled) {
-                btn.innerHTML = "✨ 隱藏精靈";
-                btn.style.background = "rgba(0,0,0,0.6)";
-                btn.style.borderColor = "var(--gold)";
-            } else {
-                btn.innerHTML = "🧚 呼叫精靈";
-                btn.style.background = "var(--primary)";
-                btn.style.borderColor = "#fff";
+async function createRoom() {
+    if (!(await ensureFirebase())) return;
+    const name = sanitizeName(document.getElementById('player-name-input').value);
+    if (!name) return showToast('請先輸入暱稱');
+    try {
+        const code = await generateUniqueRoomCode();
+        const now = Date.now();
+        await db.ref('rooms/'+code).set({
+            version: 1,
+            createdAt: serverTimestamp(),
+            hostUid: currentUid,
+            riddlerUid: currentUid,
+            round: 1,
+            phase: 'lobby',
+            players: {
+                [currentUid]: { name, joinedAt: now, online: true }
             }
-        }
+        });
+        localStorage.setItem('love4_name', name);
+        await enterRoom(code);
+    } catch (err) {
+        console.error(err); showToast(friendlyFirebaseError(err));
     }
+}
 
-    function toggleFloatingMascot() {
-        mascotEnabled = !mascotEnabled;
-        localStorage.setItem('loveLangMascot', mascotEnabled);
-        
-        let toggle = document.getElementById('mascot-toggle');
-        if(toggle) toggle.checked = mascotEnabled;
+async function joinRoom() {
+    if (!(await ensureFirebase())) return;
+    const name = sanitizeName(document.getElementById('player-name-input').value);
+    const code = normalizeRoomCode(document.getElementById('room-code-input').value);
+    if (!name) return showToast('請先輸入暱稱');
+    if (code.length !== 6) return showToast('請輸入 6 位數房號');
+    try {
+        const roomSnap = await db.ref('rooms/'+code).once('value');
+        if (!roomSnap.exists()) return showToast('找不到這個房間');
+        const room = roomSnap.val();
+        if (room.phase !== 'lobby' && !room.players?.[currentUid]) return showToast('這個房間已經開始遊戲');
+        const duplicate = Object.entries(room.players || {}).some(([uid,p]) => uid !== currentUid && p.name === name);
+        if (duplicate) return showToast('這個暱稱已有人使用，請換一個');
 
-        updateMascotBtnText();
-        updateMascot(currentStepNum);
+        const playersRef = db.ref(`rooms/${code}/players`);
+        const tx = await playersRef.transaction(players => {
+            players = players || {};
+            if (!players[currentUid] && Object.keys(players).length >= PLAYER_LIMIT) return;
+            const old = players[currentUid];
+            players[currentUid] = { name, joinedAt: old?.joinedAt || Date.now(), online: true };
+            return players;
+        });
+        if (!tx.committed) return showToast('房間已滿 4 人');
+        localStorage.setItem('love4_name', name);
+        await enterRoom(code);
+    } catch (err) {
+        console.error(err); showToast(friendlyFirebaseError(err));
     }
+}
 
-    function closeMascot(event) {
-        if (event) event.stopPropagation();
-        mascotEnabled = false;
-        document.getElementById('mascot-toggle').checked = false;
-        localStorage.setItem('loveLangMascot', 'false');
-        
-        updateMascotBtnText(); 
-        
-        const mascot = document.getElementById('mascot-ui');
-        mascot.classList.remove('show');
-        setTimeout(() => { mascot.style.display = 'none'; }, 400);
-    }
+async function enterRoom(code) {
+    detachRoomListener();
+    currentRoomCode = code;
+    localStorage.setItem('love4_room', code);
+    document.getElementById('top-room-code').textContent = code;
+    document.getElementById('top-room-btn').style.display = 'block';
+    document.getElementById('top-leave-btn').style.display = 'block';
 
-    // 精靈對白庫 
-    const tutorialTexts = {
-        1: "你好！我是日記精靈✨<br>請 <span style='color:var(--thunder-color);'>謎語人</span> 和 <span style='color:var(--fav-color);'>解謎者</span> 一起選擇一個想探討的情境吧！",
-        2: "現在由 <span style='color:var(--thunder-color);'>謎語人</span> 操作喔！<br>請選出 2 張你最「喜歡」的愛之語。",
-        3: "接下來，選出 1 張你最「不喜歡」的雷點吧！這可是大魔王呢😈",
-        4: "換 <span style='color:var(--fav-color);'>解謎者</span> 接手囉！<br>請點選一張天使卡，讓 <span style='color:var(--thunder-color);'>謎語人</span> 回答以獲取線索！",
-        5: "<span style='color:var(--fav-color);'>解謎者</span>，根據剛才的線索，猜猜 <span style='color:var(--thunder-color);'>謎語人</span> 最喜歡哪 2 種愛之語吧！",
-        6: "最後一步！猜出 <span style='color:var(--thunder-color);'>謎語人</span> 心中的大魔王（雷點）是哪一張吧！",
-        7: "結算報告出來囉！<br>快看看你們的默契，並互相分享原因吧！"
-    };
+    const playerRef = db.ref(`rooms/${code}/players/${currentUid}`);
+    await playerRef.child('online').set(true);
+    playerRef.child('online').onDisconnect().set(false);
+    playerRef.child('lastSeen').onDisconnect().set(serverTimestamp());
 
-    function updateMascot(stepNum) {
-        const mascot = document.getElementById('mascot-ui');
-        const textEl = document.getElementById('mascot-text');
-        
-        if (!mascotEnabled || stepNum === 0) {
-            mascot.classList.remove('show');
-            setTimeout(() => { mascot.style.display = 'none'; }, 400);
+    roomListenerRef = db.ref('rooms/'+code);
+    roomListenerRef.on('value', snap => {
+        if (!snap.exists()) {
+            showToast('房間已不存在');
+            clearLocalRoom();
             return;
         }
-        
-        if (tutorialTexts[stepNum]) {
-            mascot.style.display = 'flex';
-            setTimeout(() => {
-                mascot.classList.add('show');
-                textEl.innerHTML = tutorialTexts[stepNum];
-            }, 50);
-        }
+        currentRoom = snap.val();
+        renderFromRoom();
+    }, err => {
+        console.error(err); showToast(friendlyFirebaseError(err));
+    });
+}
+
+function detachRoomListener() {
+    if (roomListenerRef) roomListenerRef.off();
+    roomListenerRef = null;
+}
+
+async function tryRestoreSession() {
+    const savedName = localStorage.getItem('love4_name');
+    const savedRoom = localStorage.getItem('love4_room');
+    if (savedName) document.getElementById('player-name-input').value = savedName;
+    if (!savedRoom) return;
+    const snap = await db.ref('rooms/'+savedRoom).once('value');
+    if (snap.exists() && snap.val().players?.[currentUid]) {
+        await enterRoom(savedRoom);
+        showToast('已重新連回房間 '+savedRoom);
+    } else {
+        localStorage.removeItem('love4_room');
     }
+}
 
-
-    // --- 工具與基礎資料 ---
-    const sleep = ms => new Promise(r => setTimeout(r, ms)); 
-
-    const loveLanguages = [
-        { id: 'c1', image: 'words.jpg', label: '肯定的言詞' },
-        { id: 'c2', image: 'gift.jpg', label: '真心的禮物' },
-        { id: 'c3', image: 'service.jpg', label: '服務的行動' },
-        { id: 'c4', image: 'time.jpg', label: '精心的時刻' },
-        { id: 'c5', image: 'touch.jpg', label: '身體的接觸' }
-    ];
-
-    const allScenarios = ['s1.jpg', 's2.jpg', 's3.jpg', 's4.jpg', 's5.jpg', 's6.jpg'];
-    const angelCards = ['angel1.jpg', 'angel2.jpg', 'angel3.jpg', 'angel4.jpg', 'angel5.jpg', 'angel6.jpg'];
-
-    let gameState = { a_fav: [], a_thunder: [], b_fav: [], b_thunder: [] };
-    let currentTempSelection = []; 
-    let cardPools = {}; // 剩餘的卡牌庫 
-
-    const flat3 = [ {tx: -240, ry: 0, tz: 0}, {tx: 0, ry: 0, tz: 0}, {tx: 240, ry: 0, tz: 0} ];
-    const flat5 = [ {tx: -420, ry: 0, tz: 0}, {tx: -210, ry: 0, tz: 0}, {tx: 0, ry: 0, tz: 0}, {tx: 210, ry: 0, tz: 0}, {tx: 420, ry: 0, tz: 0} ];
-
-    // 發牌函數
-    function dealCards(stageId, items, isLoveLang, maxSelect, typeStr, stateKey) {
-        const stage = document.getElementById(stageId);
-        stage.innerHTML = ''; currentTempSelection = [];
-        const btnId = `btn-confirm-${stageId.split('-')[1]}`;
-        const btn = document.getElementById(btnId);
-        if(btn) btn.disabled = (btnId !== 'btn-confirm-1' && btnId !== 'btn-confirm-4');
-
-        const layout = items.length === 3 ? flat3 : flat5;
-        const hasRefresh = (stageId === 'stage-1' || stageId === 'stage-4');
-
-        items.forEach((item, index) => {
-            let isExcluded = false;
-            if (stateKey === 'a_thunder' && gameState.a_fav.includes(item.id)) isExcluded = true;
-            if (stateKey === 'b_thunder' && gameState.b_fav.includes(item.id)) isExcluded = true;
-
-            const card = document.createElement('div');
-            card.className = `card ${isExcluded ? 'excluded' : ''}`;
-            card.style.setProperty('--tx', `${layout[index].tx}px`);
-            card.style.setProperty('--ry', `${layout[index].ry}deg`);
-            card.style.setProperty('--tz', `${layout[index].tz}px`);
-            
-            card.dataset.imgSrc = item.image || item; // 紀錄目前圖片
-
-            const delayMs = index * 150; card.style.animationDelay = `${delayMs}ms`; 
-
-            let innerHTML = '';
-            
-            if (hasRefresh) {
-                innerHTML += `<div class="refresh-btn" title="重抽一次" onclick="event.stopPropagation(); refreshCard(this, '${stageId}')">🔄</div>`;
-            }
-
-            innerHTML += `<div class="card-visual">`;
-            innerHTML += `<img src="${card.dataset.imgSrc}" class="card-bg">`;
-            
-            if (isLoveLang) {
-                innerHTML += `<div class="card-overlay"><div class="card-label">${item.label}</div></div>`;
-                innerHTML += `<div class="zoom-btn" onclick="event.stopPropagation(); openModal('${item.image}')">🔍</div>`;
-                if (!isExcluded) card.onclick = () => handleLoveLangClick(card, item.id, maxSelect, typeStr, btnId, stateKey);
+async function leaveRoom() {
+    if (!currentRoomCode || !db) return clearLocalRoom();
+    const code = currentRoomCode;
+    try {
+        const room = currentRoom;
+        if (room?.phase === 'lobby') {
+            if (room.hostUid === currentUid) {
+                await db.ref('rooms/'+code).remove();
             } else {
-                innerHTML += `<div class="card-overlay" style="background: rgba(0,0,0,0.3);"><div class="card-label">${item.label || ''}</div></div>`;
-                card.onclick = () => handleScenarioAngelClick(card, card.dataset.imgSrc);
+                await db.ref(`rooms/${code}/players/${currentUid}`).remove();
             }
-            innerHTML += `</div>`; 
-            
-            card.innerHTML = innerHTML; 
-            stage.appendChild(card);
-            
-            setTimeout(() => {
-                card.classList.add('dealing'); 
-                setTimeout(() => { card.classList.remove('dealing'); card.classList.add('dealt'); }, delayMs + 850);
-            }, 50);
-        });
-    }
-
-    // --- 🌟 單次卡牌縮放刷新機制 (Pop-in/out) ---
-    function refreshCard(btnEl, stageId) {
-        let pool = cardPools[stageId];
-        if (!pool || pool.length === 0) return;
-        
-        let cardEl = btnEl.closest('.card');
-        let newItem = pool.pop(); 
-        
-        btnEl.classList.add('disabled'); 
-        
-        cardEl.classList.add('refreshing');
-        
-        setTimeout(() => {
-            let newImgSrc = newItem.image || newItem;
-            cardEl.dataset.imgSrc = newImgSrc;
-            cardEl.querySelector('.card-bg').src = newImgSrc;
-            
-            if(cardEl.classList.contains('selected-fav')) {
-                cardEl.classList.remove('selected-fav');
-                let cBtn = document.getElementById(`btn-confirm-${stageId.split('-')[1]}`);
-                if(cBtn && (stageId !== 'stage-1' && stageId !== 'stage-4')) cBtn.disabled = true;
-            }
-            
-            cardEl.classList.remove('refreshing');
-            cardEl.classList.add('popping-in');
-            
-            setTimeout(() => cardEl.classList.remove('popping-in'), 400);
-            
-            if (pool.length === 0) {
-                document.querySelectorAll(`#${stageId} .refresh-btn`).forEach(b => b.classList.add('disabled'));
-            }
-        }, 200); 
-    }
-
-    function handleScenarioAngelClick(cardEl, imgSrc) {
-        const stage = cardEl.parentElement;
-        stage.querySelectorAll('.card').forEach(c => { c.classList.remove('selected-fav', 'dimmed'); });
-        cardEl.classList.add('selected-fav'); 
-        stage.querySelectorAll('.card').forEach(c => { if (c !== cardEl) c.classList.add('dimmed'); });
-        openModal(cardEl.dataset.imgSrc); 
-    }
-
-    function handleLoveLangClick(cardEl, langId, maxCount, typeStr, btnId, stateKey) {
-        const isSelected = currentTempSelection.includes(langId);
-        const selectedClass = typeStr === 'fav' ? 'selected-fav' : 'selected-thunder';
-        const instEl = document.getElementById(`inst-${btnId.split('-')[2]}`);
-
-        if (isSelected) {
-            currentTempSelection = currentTempSelection.filter(id => id !== langId); 
-            cardEl.classList.remove(selectedClass);
         } else {
-            if (maxCount === 1) {
-                currentTempSelection = [langId];
-                const stage = cardEl.parentElement;
-                stage.querySelectorAll('.card').forEach(c => c.classList.remove(selectedClass));
-                cardEl.classList.add(selectedClass);
-            } else {
-                if (currentTempSelection.length < maxCount) { 
-                    currentTempSelection.push(langId); 
-                    cardEl.classList.add(selectedClass); 
-                }
-            }
+            await db.ref(`rooms/${code}/players/${currentUid}/online`).set(false);
         }
+    } catch (err) { console.warn(err); }
+    clearLocalRoom();
+}
 
-        const word = typeStr === 'fav' ? '喜歡' : '不喜歡';
-        if(instEl) instEl.textContent = `請選擇 ${maxCount} 種你最「${word}」的愛之語 (${currentTempSelection.length}/${maxCount})`;
-        
-        if (currentTempSelection.length === maxCount) { 
-            document.getElementById(btnId).disabled = false; 
-            gameState[stateKey] = [...currentTempSelection]; 
-        } else { 
-            document.getElementById(btnId).disabled = true; 
+function clearLocalRoom() {
+    detachRoomListener();
+    currentRoomCode = null; currentRoom = null; lastRenderedPhase = null;
+    localStorage.removeItem('love4_room');
+    document.getElementById('top-room-btn').style.display = 'none';
+    document.getElementById('top-leave-btn').style.display = 'none';
+    showScreen('network-entry-screen');
+}
+
+function renderFromRoom() {
+    if (!currentRoom) return;
+    const phase = currentRoom.phase || 'lobby';
+    if (phase !== lastRenderedPhase) {
+        tempSelection = [];
+        if (phase !== 'guessing') {
+            guessDraftFav = []; guessDraftThunder = []; localGuessStep = 'fav';
         }
+        lastRenderedPhase = phase;
     }
+    if (phase === 'lobby') renderLobby();
+    else if (phase === 'scenario') renderScenario();
+    else if (phase === 'riddleFav') renderRiddleFavPhase();
+    else if (phase === 'riddleThunder') renderRiddleThunderPhase();
+    else if (phase === 'angel') renderAngelPhase();
+    else if (phase === 'guessing') renderGuessingPhase();
+    else if (phase === 'result') renderResults();
+}
 
-    function stageIdNum(btnId) { return btnId.split('-')[2]; }
+function renderLobby() {
+    showScreen('lobby-screen');
+    document.getElementById('lobby-room-code').textContent = currentRoomCode;
+    const players = getPlayersArray();
+    document.getElementById('lobby-count').textContent = `${players.length} / ${PLAYER_LIMIT}`;
+    document.getElementById('lobby-role-note').innerHTML = isHost()
+        ? '你是房主，也是第一輪的 <span style="color:var(--thunder-color);font-weight:bold;">謎語人</span>。'
+        : `房主 <b>${escapeHtml(getPlayer(currentRoom.hostUid)?.name || '')}</b> 將在 4 人到齊後開始。`;
+    renderPlayersGrid(players, 'players-grid');
+    const btn = document.getElementById('start-game-btn');
+    btn.style.display = isHost() ? 'inline-block' : 'none';
+    btn.disabled = players.length !== PLAYER_LIMIT;
+    btn.textContent = players.length === PLAYER_LIMIT ? '4 人到齊，開始遊戲' : `等待玩家 ${players.length}/4`;
+}
 
-    // ==========================================
-    // 結算與動畫展演核心 
-    // ==========================================
-    function createMiniCardDOM(langId, containerId, uniqueCardId) {
-        const lang = loveLanguages.find(l => l.id === langId);
-        const html = `
-            <div class="res-card-wrap" id="${uniqueCardId}">
-                <div class="res-card">
-                    <div class="res-card-face res-card-back">?</div>
-                    <div class="res-card-face res-card-front">
-                        <img src="${lang.image}">
-                        <div class="res-card-label">${lang.label}</div>
-                    </div>
-                </div>
-            </div>
-        `;
-        document.getElementById(containerId).insertAdjacentHTML('beforeend', html);
+function renderPlayersGrid(players, containerId) {
+    const el = document.getElementById(containerId);
+    el.innerHTML = players.map((p,i) => {
+        const rid = currentRoom?.riddlerUid === p.uid;
+        const role = currentRoom?.phase === 'lobby' ? (p.uid===currentRoom.hostUid?'房主／第一輪謎語人':'猜謎者') : (rid?'謎語人':'猜謎者');
+        return `<div class="player-card ${p.uid===currentUid?'me':''} ${rid?'riddler':''}">
+            <div class="player-avatar">${i+1}</div>
+            <div class="player-info"><div class="player-name">${escapeHtml(p.name)}${p.uid===currentUid?'（你）':''}</div><div class="player-role">${role}</div></div>
+            <div class="online-dot ${p.online?'on':''}"></div>
+        </div>`;
+    }).join('');
+}
+
+async function startOnlineGame() {
+    if (!isHost()) return;
+    const players = getPlayersArray();
+    if (players.length !== PLAYER_LIMIT) return showToast('需要 4 位玩家才能開始');
+    const order = players.map(p=>p.uid);
+    await beginRound(currentRoom.riddlerUid || currentUid, order, 1);
+}
+
+async function beginRound(riddlerUid, order, roundNo) {
+    const guessers = order.filter(uid => uid !== riddlerUid);
+    const s = shuffle(allScenarios);
+    await db.ref('rooms/'+currentRoomCode).update({
+        round: roundNo,
+        playerOrder: order,
+        riddlerUid,
+        angelPickerUid: guessers[0],
+        phase:'scenario',
+        scenarioOptions: s.slice(0,3),
+        scenarioPool: s.slice(3),
+        selectedScenario:null,
+        angelOptions:null,
+        angelPool:null,
+        selectedAngel:null,
+        answer:null,
+        guesses:null,
+        startedAt: serverTimestamp()
+    });
+}
+
+function setRoleBanner(elId) {
+    const el = document.getElementById(elId);
+    if (isRiddler()) {
+        el.className='role-banner riddler'; el.textContent='👑 你是本輪謎語人';
+    } else {
+        el.className='role-banner guesser'; el.textContent='🕵️ 你是本輪猜謎者';
     }
+}
 
-    function flyHeartAnimation(startElem, endElem, emojiStr) {
-        return new Promise(resolve => {
-            const startRect = startElem.getBoundingClientRect();
-            const endRect = endElem.getBoundingClientRect();
-            
-            const heart = document.createElement('div');
-            heart.className = 'flying-heart';
-            heart.innerHTML = emojiStr;
-            
-            const startX = startRect.left + startRect.width / 2 - 20; 
-            const startY = startRect.top + startRect.height / 2 - 20;
-            const endX = endRect.left + endRect.width / 2 - 20;
-            const endY = endRect.top + endRect.height / 2 - 20;
-            
-            heart.style.left = startX + 'px';
-            heart.style.top = startY + 'px';
-            document.body.appendChild(heart);
-            
-            setTimeout(() => {
-                heart.style.transform = `translate(${endX - startX}px, ${endY - startY}px) scale(1.5)`;
-                heart.style.opacity = '0';
-            }, 50);
+function renderScenario() {
+    showScreen('scenario-screen');
+    setRoleBanner('scenario-role');
+    const inst = document.getElementById('scenario-inst');
+    inst.innerHTML = isRiddler()
+        ? '請選擇 1 張情境卡。本輪所有人會以這個情境思考。'
+        : `等待 <span style="color:var(--thunder-color);">${escapeHtml(getRiddlerName())}</span> 選擇情境。`;
+    renderSharedImageCards('stage-scenario', currentRoom.scenarioOptions || [], currentRoom.selectedScenario, 'scenario');
+    const btn = document.getElementById('scenario-confirm-btn');
+    btn.style.display = isRiddler() ? 'inline-block' : 'none';
+    btn.disabled = !currentRoom.selectedScenario;
+}
 
-            setTimeout(() => { heart.remove(); resolve(); }, 650);
-        });
+function renderSharedImageCards(stageId, items, selected, kind) {
+    const stage = document.getElementById(stageId);
+    stage.innerHTML='';
+    const layout = flat3;
+    items.forEach((img,index) => {
+        const card = document.createElement('div');
+        const canOperate = kind==='scenario' ? isRiddler() : (isAngelPicker() && !currentRoom.selectedAngel);
+        card.className = 'card dealt' + (!canOperate?' readonly':'');
+        card.style.setProperty('--tx',`${layout[index].tx}px`);
+        card.style.setProperty('--ry','0deg'); card.style.setProperty('--tz','0px');
+        if (selected === img) card.classList.add('selected-fav');
+        else if (selected) card.classList.add('dimmed');
+        const refreshAllowed = canOperate && !selected;
+        card.innerHTML = `${refreshAllowed?`<div class="refresh-btn" onclick="event.stopPropagation();refreshSharedCard(${index},'${kind}')">🔄</div>`:''}
+            <div class="card-visual"><img src="${img}" class="card-bg"><div class="card-overlay" style="background:rgba(0,0,0,.25);"></div></div>`;
+        card.onclick = () => {
+            if (kind==='scenario' && isRiddler()) chooseScenario(img);
+            if (kind==='angel' && isAngelPicker() && !currentRoom.selectedAngel) chooseAngel(img);
+            openModal(img);
+        };
+        stage.appendChild(card);
+    });
+}
+
+async function refreshSharedCard(index, kind) {
+    if (!currentRoomCode) return;
+    const optionsKey = kind==='scenario' ? 'scenarioOptions' : 'angelOptions';
+    const poolKey = kind==='scenario' ? 'scenarioPool' : 'angelPool';
+    const can = kind==='scenario' ? isRiddler() : isAngelPicker();
+    if (!can) return;
+    const options = [...(currentRoom[optionsKey] || [])];
+    const pool = [...(currentRoom[poolKey] || [])];
+    if (!pool.length) return showToast('沒有其他卡可以重抽了');
+    options[index] = pool.pop();
+    await db.ref('rooms/'+currentRoomCode).update({[optionsKey]:options,[poolKey]:pool});
+}
+
+async function chooseScenario(img) {
+    if (!isRiddler()) return;
+    await db.ref(`rooms/${currentRoomCode}/selectedScenario`).set(img);
+}
+async function confirmScenario() {
+    if (!isRiddler() || !currentRoom.selectedScenario) return;
+    await db.ref(`rooms/${currentRoomCode}/phase`).set('riddleFav');
+}
+
+function renderRiddleFavPhase() {
+    if (!isRiddler()) return renderPrivateWait('🔒','謎語人正在秘密作答',`${escapeHtml(getRiddlerName())} 正在選擇最喜歡的 2 種愛之語。你的手機不會顯示他的答案。`);
+    showScreen('riddle-fav-screen');
+    renderLoveCards('stage-riddle-fav',2,'fav',tempSelection,[], handleRiddleFavClick);
+    updateSelectionInstruction('inst-riddle-fav','喜歡',2,tempSelection.length);
+    document.getElementById('btn-riddle-fav').disabled = tempSelection.length!==2;
+}
+function handleRiddleFavClick(id) {
+    tempSelection = toggleSelection(tempSelection,id,2);
+    renderRiddleFavPhase();
+}
+async function confirmRiddleFav() {
+    if (!isRiddler() || tempSelection.length!==2) return;
+    await db.ref(`rooms/${currentRoomCode}`).update({'answer/fav':tempSelection,phase:'riddleThunder'});
+}
+
+function renderRiddleThunderPhase() {
+    if (!isRiddler()) return renderPrivateWait('⚡','謎語人正在選擇雷點',`${escapeHtml(getRiddlerName())} 正在選擇最不喜歡的 1 種愛之語。`);
+    showScreen('riddle-thunder-screen');
+    const excluded = currentRoom.answer?.fav || [];
+    renderLoveCards('stage-riddle-thunder',1,'thunder',tempSelection,excluded, handleRiddleThunderClick);
+    updateSelectionInstruction('inst-riddle-thunder','不喜歡',1,tempSelection.length);
+    document.getElementById('btn-riddle-thunder').disabled = tempSelection.length!==1;
+}
+function handleRiddleThunderClick(id) {
+    tempSelection = toggleSelection(tempSelection,id,1);
+    renderRiddleThunderPhase();
+}
+async function confirmRiddleThunder() {
+    if (!isRiddler() || tempSelection.length!==1) return;
+    const a = shuffle(angelCards);
+    await db.ref('rooms/'+currentRoomCode).update({
+        'answer/thunder':tempSelection,
+        angelOptions:a.slice(0,3), angelPool:a.slice(3), selectedAngel:null, phase:'angel'
+    });
+}
+
+function renderAngelPhase() {
+    showScreen('angel-screen');
+    setRoleBanner('angel-role');
+    const pickerName = getAngelPickerName();
+    const inst = document.getElementById('angel-inst');
+    if (!currentRoom.selectedAngel) {
+        if (isAngelPicker()) inst.innerHTML = '你是本輪的天使卡抽卡者：請選 1 張卡，請謎語人回答。';
+        else inst.innerHTML = `等待 <span style="color:var(--fav-color);">${escapeHtml(pickerName)}</span> 抽取天使卡。`;
+    } else {
+        inst.innerHTML = `已抽出天使卡！請 <span style="color:var(--thunder-color);">${escapeHtml(getRiddlerName())}</span> 口頭回答卡片上的問題。`;
     }
+    renderSharedImageCards('stage-angel', currentRoom.angelOptions || [], currentRoom.selectedAngel, 'angel');
+    const btn = document.getElementById('angel-answer-btn');
+    btn.style.display = isRiddler() ? 'inline-block' : 'none';
+    btn.disabled = !currentRoom.selectedAngel;
+}
+async function chooseAngel(img) {
+    if (!isAngelPicker() || currentRoom.selectedAngel) return;
+    await db.ref(`rooms/${currentRoomCode}/selectedAngel`).set(img);
+}
+async function startGuessingPhase() {
+    if (!isRiddler() || !currentRoom.selectedAngel) return;
+    await db.ref(`rooms/${currentRoomCode}/phase`).set('guessing');
+}
 
-    async function playResultCutscene() {
-        document.getElementById('hearts-display').innerHTML = '';
-        ['res-a-fav', 'res-b-fav', 'res-a-thunder', 'res-b-thunder'].forEach(id => document.getElementById(id).innerHTML = '');
-
-        gameState.a_fav.forEach((id, idx) => createMiniCardDOM(id, 'res-a-fav', `a-f-${idx}`));
-        gameState.b_fav.forEach((id, idx) => createMiniCardDOM(id, 'res-b-fav', `b-f-${idx}`));
-        gameState.a_thunder.forEach((id, idx) => createMiniCardDOM(id, 'res-a-thunder', `a-t-${idx}`));
-        gameState.b_thunder.forEach((id, idx) => createMiniCardDOM(id, 'res-b-thunder', `b-t-${idx}`));
-
-        let currentHearts = 0;
-        await sleep(600); 
-
-        // 翻開喜歡區
-        const favCards = document.querySelectorAll('#res-a-fav .res-card, #res-b-fav .res-card');
-        favCards.forEach(c => c.classList.add('flipped'));
-        await sleep(1000); 
-
-        for (let i = 0; i < gameState.b_fav.length; i++) {
-            let bAnsId = gameState.b_fav[i];
-            let aIndexMatch = gameState.a_fav.indexOf(bAnsId);
-            
-            if (aIndexMatch !== -1) { 
-                let aCardWrap = document.getElementById(`a-f-${aIndexMatch}`);
-                let bCardWrap = document.getElementById(`b-f-${i}`);
-                
-                await flyHeartAnimation(aCardWrap, bCardWrap, '❤️');
-                bCardWrap.classList.add('match-fav'); 
-                currentHearts++;
-                document.getElementById('hearts-display').innerHTML = '❤️'.repeat(currentHearts);
-                await sleep(300); 
-            }
-        }
-
-        await sleep(800); 
-
-        // 翻開雷點區
-        const thunderCards = document.querySelectorAll('#res-a-thunder .res-card, #res-b-thunder .res-card');
-        thunderCards.forEach(c => c.classList.add('flipped'));
-        await sleep(1000);
-
-        for (let i = 0; i < gameState.b_thunder.length; i++) {
-            let bAnsId = gameState.b_thunder[i];
-            let aIndexMatch = gameState.a_thunder.indexOf(bAnsId);
-            
-            if (aIndexMatch !== -1) {
-                let aCardWrap = document.getElementById(`a-t-${aIndexMatch}`);
-                let bCardWrap = document.getElementById(`b-t-${i}`);
-                
-                flyHeartAnimation(aCardWrap, bCardWrap, '❤️');
-                await sleep(150);
-                await flyHeartAnimation(aCardWrap, bCardWrap, '❤️');
-                
-                bCardWrap.classList.add('match-thunder'); 
-                currentHearts += 2;
-                document.getElementById('hearts-display').innerHTML = '❤️'.repeat(currentHearts);
-            }
-        }
-
-        if (currentHearts === 0) {
-            document.getElementById('hearts-display').innerHTML = '<span style="font-size:1rem; color:#ccc;">💔 沒猜中，要多溝通喔</span>';
-        }
+function renderGuessingPhase() {
+    const guesses = currentRoom.guesses || {};
+    const guessers = getPlayersArray().filter(p=>p.uid!==currentRoom.riddlerUid);
+    if (isRiddler()) {
+        const done = guessers.filter(p=>guesses[p.uid]).length;
+        renderPrivateWait('🧩','猜謎者作答中',`3 位猜謎者正在各自的手機上作答。<br><b>${done} / 3</b> 已送出。`, guessers.map(p=>({name:p.name,done:!!guesses[p.uid]})), done===3);
+        return;
     }
-
-    // --- 路由器 ---
-    function goToStep(stepNum) {
-        currentStepNum = stepNum;
-        document.querySelectorAll('.step-section').forEach(el => el.classList.remove('active'));
-        document.getElementById(`step-${stepNum}`).classList.add('active');
-
-        // 控制常駐上方按鈕
-        document.getElementById('top-restart-btn').style.display = (stepNum === 0) ? 'none' : 'block';
-        document.getElementById('top-mascot-btn').style.display = (stepNum === 0) ? 'none' : 'block';
-
-        updateMascotBtnText();
-        updateMascot(stepNum);
-
-        if (stepNum === 1) {
-            gameState = { a_fav: [], a_thunder: [], b_fav: [], b_thunder: [] };
-            let shuffled = [...allScenarios].sort(() => 0.5 - Math.random());
-            let onTable = shuffled.slice(0, 3);
-            cardPools['stage-1'] = shuffled.slice(3); // 剩餘進牌庫
-            dealCards('stage-1', onTable, false);
-        }
-        else if (stepNum === 2) dealCards('stage-2', loveLanguages, true, 2, 'fav', 'a_fav');
-        else if (stepNum === 3) dealCards('stage-3', loveLanguages, true, 1, 'thunder', 'a_thunder');
-        else if (stepNum === 4) {
-            let shuffled = [...angelCards].sort(() => 0.5 - Math.random());
-            let onTable = shuffled.slice(0, 3);
-            cardPools['stage-4'] = shuffled.slice(3); // 剩餘進牌庫
-            dealCards('stage-4', onTable, false);
-        }
-        else if (stepNum === 5) dealCards('stage-5', loveLanguages, true, 2, 'fav', 'b_fav');
-        else if (stepNum === 6) dealCards('stage-6', loveLanguages, true, 1, 'thunder', 'b_thunder');
-        else if (stepNum === 7) playResultCutscene(); 
+    if (guesses[currentUid]) {
+        renderPrivateWait('✅','你的答案已送出','答案已鎖定，等待其他猜謎者完成。', guessers.map(p=>({name:p.name,done:!!guesses[p.uid]})));
+        return;
     }
+    if (localGuessStep==='thunder') renderGuessThunder(); else renderGuessFav();
+}
 
-    function openModal(imgSrc) { document.getElementById('modal-image').src = imgSrc; document.getElementById('image-modal').style.display = 'flex'; }
-    function closeModal() { document.getElementById('image-modal').style.display = 'none'; }
+function renderGuessFav() {
+    showScreen('guess-fav-screen');
+    renderLoveCards('stage-guess-fav',2,'fav',guessDraftFav,[], id=>{
+        guessDraftFav = toggleSelection(guessDraftFav,id,2); renderGuessFav();
+    });
+    updateSelectionInstruction('inst-guess-fav','喜歡',2,guessDraftFav.length,true);
+    document.getElementById('btn-guess-fav').disabled = guessDraftFav.length!==2;
+}
+function goToGuessThunder() {
+    if (guessDraftFav.length!==2) return;
+    localGuessStep='thunder'; renderGuessThunder();
+}
+function renderGuessThunder() {
+    showScreen('guess-thunder-screen');
+    renderLoveCards('stage-guess-thunder',1,'thunder',guessDraftThunder,guessDraftFav,id=>{
+        guessDraftThunder = toggleSelection(guessDraftThunder,id,1); renderGuessThunder();
+    });
+    updateSelectionInstruction('inst-guess-thunder','不喜歡',1,guessDraftThunder.length,true);
+    document.getElementById('btn-guess-thunder').disabled = guessDraftThunder.length!==1;
+}
+async function submitGuess() {
+    if (isRiddler() || guessDraftFav.length!==2 || guessDraftThunder.length!==1) return;
+    const guessRef = db.ref(`rooms/${currentRoomCode}/guesses/${currentUid}`);
+    const already = await guessRef.once('value');
+    if (already.exists()) return showToast('你已經送出答案');
+    await guessRef.set({fav:guessDraftFav,thunder:guessDraftThunder,submittedAt:serverTimestamp()});
+}
 
+function toggleSelection(list,id,max) {
+    const arr=[...list];
+    const idx=arr.indexOf(id);
+    if (idx>=0) arr.splice(idx,1);
+    else if (max===1) return [id];
+    else if (arr.length<max) arr.push(id);
+    return arr;
+}
+function updateSelectionInstruction(id,word,max,count,isGuess=false) {
+    const el=document.getElementById(id);
+    if (!el) return;
+    el.textContent = `${isGuess?'請猜測':'請選擇'} ${max} 種${isGuess?'謎語人最':'你最'}「${word}」的愛之語 (${count}/${max})`;
+}
+function renderLoveCards(stageId,max,type,selected,excluded,onClick) {
+    const stage=document.getElementById(stageId); stage.innerHTML='';
+    loveLanguages.forEach((item,index)=>{
+        const isExcluded=excluded.includes(item.id);
+        const card=document.createElement('div');
+        card.className=`card dealt ${isExcluded?'excluded':''}`;
+        card.style.setProperty('--tx',`${flat5[index].tx}px`); card.style.setProperty('--ry','0deg'); card.style.setProperty('--tz','0px');
+        if (selected.includes(item.id)) card.classList.add(type==='fav'?'selected-fav':'selected-thunder');
+        card.innerHTML=`<div class="card-visual"><img src="${item.image}" class="card-bg"><div class="card-overlay"><div class="card-label">${item.label}</div></div><div class="zoom-btn" onclick="event.stopPropagation();openModal('${item.image}')">🔍</div></div>`;
+        if (!isExcluded) card.onclick=()=>onClick(item.id);
+        stage.appendChild(card);
+    });
+}
+
+function renderPrivateWait(icon,title,text,progress=null,showReveal=false) {
+    showScreen('wait-screen');
+    document.getElementById('wait-icon').textContent=icon;
+    document.getElementById('wait-title').textContent=title;
+    document.getElementById('wait-text').innerHTML=text;
+    const p=document.getElementById('wait-progress');
+    p.innerHTML=progress ? progress.map(x=>`<span class="progress-pill ${x.done?'done':''}">${x.done?'✓':'…'} ${escapeHtml(x.name)}</span>`).join('') : '';
+    const reveal=document.getElementById('reveal-btn');
+    reveal.style.display=showReveal && isRiddler() ? 'inline-block':'none';
+}
+
+async function revealResults() {
+    if (!isRiddler()) return;
+    const guessCount=Object.keys(currentRoom.guesses||{}).length;
+    if (guessCount!==3) return showToast('還有人尚未完成');
+    await db.ref(`rooms/${currentRoomCode}/phase`).set('result');
+}
+
+function scoreGuess(guess,answer) {
+    let score=0;
+    (guess?.fav||[]).forEach(id=>{ if ((answer?.fav||[]).includes(id)) score+=1; });
+    (guess?.thunder||[]).forEach(id=>{ if ((answer?.thunder||[]).includes(id)) score+=2; });
+    return score;
+}
+function staticCard(id,matchClass='') {
+    const lang=loveLanguages.find(x=>x.id===id);
+    if (!lang) return '';
+    return `<div class="mini-static-card ${matchClass}"><img src="${lang.image}"><div class="mini-static-label">${lang.label}</div></div>`;
+}
+function renderResults() {
+    showScreen('result-screen');
+    const answer=currentRoom.answer||{fav:[],thunder:[]};
+    const guessers=getPlayersArray().filter(p=>p.uid!==currentRoom.riddlerUid);
+    const guesses=currentRoom.guesses||{};
+    document.getElementById('result-round-note').innerHTML=`第 ${currentRoom.round||1} 局｜謎語人：<span style="color:var(--thunder-color);font-weight:bold;">${escapeHtml(getRiddlerName())}</span>`;
+    let html=`<div class="truth-panel"><div class="result-head"><div class="result-name">👑 ${escapeHtml(getRiddlerName())} 的真實心聲</div><div style="color:#aaa;">謎語人</div></div>
+        <div class="result-row"><div class="result-label">❤️ 喜歡</div><div class="mini-card-line">${(answer.fav||[]).map(id=>staticCard(id)).join('')}</div></div>
+        <div class="result-row"><div class="result-label">⚡ 雷點</div><div class="mini-card-line">${(answer.thunder||[]).map(id=>staticCard(id)).join('')}</div></div></div>`;
+    guessers.forEach(p=>{
+        const g=guesses[p.uid]||{fav:[],thunder:[]};
+        const score=scoreGuess(g,answer);
+        const favHtml=(g.fav||[]).map(id=>staticCard(id,(answer.fav||[]).includes(id)?'match-fav':'')).join('');
+        const thunderHtml=(g.thunder||[]).map(id=>staticCard(id,(answer.thunder||[]).includes(id)?'match-thunder':'')).join('');
+        html+=`<div class="guess-result-panel"><div class="result-head"><div class="result-name">🕵️ ${escapeHtml(p.name)}${p.uid===currentUid?'（你）':''}</div><div class="score-hearts">${score?('❤️'.repeat(score)):'💔'} <span style="color:#aaa;font-size:.85rem;letter-spacing:0;">${score}/4</span></div></div>
+            <div class="result-row"><div class="result-label">❤️ 猜喜歡</div><div class="mini-card-line">${favHtml}</div></div>
+            <div class="result-row"><div class="result-label">⚡ 猜雷點</div><div class="mini-card-line">${thunderHtml}</div></div></div>`;
+    });
+    document.getElementById('online-results').innerHTML=html;
+    setTimeout(()=>document.querySelectorAll('.mini-static-card').forEach((c,i)=>setTimeout(()=>c.classList.add('reveal'),i*70)),120);
+    const next=document.getElementById('next-round-btn');
+    next.style.display=isRiddler()?'inline-block':'none';
+}
+
+async function startNextRound() {
+    if (!isRiddler()) return;
+    const order=currentRoom.playerOrder || getPlayersArray().map(p=>p.uid);
+    if (order.length!==4) return showToast('需要 4 位玩家都留在房間');
+    const idx=order.indexOf(currentRoom.riddlerUid);
+    const nextRiddler=order[(idx+1)%order.length];
+    lastRenderedPhase=null; tempSelection=[]; guessDraftFav=[]; guessDraftThunder=[]; localGuessStep='fav';
+    await beginRound(nextRiddler,order,(currentRoom.round||1)+1);
+}
+
+function copyRoomCode() {
+    if (!currentRoomCode) return;
+    if (navigator.clipboard?.writeText) navigator.clipboard.writeText(currentRoomCode).then(()=>showToast('已複製房號 '+currentRoomCode)).catch(()=>fallbackCopy());
+    else fallbackCopy();
+}
+function fallbackCopy() {
+    const t=document.createElement('textarea'); t.value=currentRoomCode; document.body.appendChild(t); t.select();
+    try { document.execCommand('copy'); showToast('已複製房號 '+currentRoomCode); } catch(e) { showToast('房號：'+currentRoomCode); }
+    t.remove();
+}
+function showToast(msg) {
+    const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show');
+    clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.classList.remove('show'),2500);
+}
+function openModal(imgSrc) { document.getElementById('modal-image').src=imgSrc; document.getElementById('image-modal').style.display='flex'; }
+function closeModal() { document.getElementById('image-modal').style.display='none'; }
+
+window.addEventListener('DOMContentLoaded',()=>{
+    const n=localStorage.getItem('love4_name'); if(n) document.getElementById('player-name-input').value=n;
+    document.getElementById('room-code-input').addEventListener('input',e=>e.target.value=normalizeRoomCode(e.target.value));
+    initFirebase();
+});
 </script>
-
 </body>
 </html>
